@@ -4,10 +4,12 @@ import axiosInstance from '../api/axiosInstance'
 import { getRecoverySummary } from '../api/recoveryApi'
 import { getLiftRatio } from '../api/analyticsApi'
 import { getDashboardConfig, updateDashboardConfig } from '../api/dashboardConfigApi'
+import { dashboardChat } from '../api/chatApi'
 import WidgetGoalProgress from '../components/WidgetGoalProgress'
 import WidgetRecommendation from '../components/WidgetRecommendation'
 import WidgetRecoveryScore from '../components/WidgetRecoveryScore'
 import DashboardWidgetToggle from '../components/DashboardWidgetToggle'
+import FloatingChat from '../components/FloatingChat'
 
 import type { ApiResponse, LiftRecord, ChecklistLog, RecoverySummary, LiftRatio } from '../types'
 
@@ -85,22 +87,27 @@ export default function Dashboard() {
         <Link to="/app/lifts" className="bg-raised p-4 sm:p-6 border border-hairline hover:bg-hovered transition-colors">
           <h3 className="font-semibold text-champagne mb-1">Total Lifts</h3>
           <p className="text-2xl sm:text-3xl font-bold text-gold">{recentLifts.length}</p>
-          <p className="text-sm text-muted mt-1">Month</p>
+          <p className="text-xs text-muted mt-1">Kegunaan: melihat jumlah latihan SBD bulan ini</p>
         </Link>
         <Link to="/app/lifts" className="bg-raised p-4 sm:p-6 border border-hairline hover:bg-hovered transition-colors">
           <h3 className="font-semibold text-champagne mb-1">Checklist</h3>
           <p className="text-2xl sm:text-3xl font-bold text-patina">{checklistSummary.done}/{checklistSummary.total}</p>
-          <p className="text-sm text-muted mt-1">Today</p>
+          <p className="text-xs text-muted mt-1">Kegunaan: memantau progress warmup/cooldown hari ini</p>
         </Link>
         <Link to="/app/calculator" className="bg-raised p-4 sm:p-6 border border-hairline hover:bg-hovered transition-colors">
           <h3 className="font-semibold text-champagne mb-1">1RM Calculator</h3>
-          <p className="text-sm text-muted mt-2">Calculate your one-rep max</p>
+          <p className="text-xs text-muted mt-2">Kegunaan: hitung estimasi one-rep max dengan formula Epley/Brzycki/Lombardi</p>
         </Link>
       </div>
 
       {recentLifts.length > 0 && (
         <div className="bg-raised border border-hairline p-4 sm:p-6">
-          <h2 className="font-semibold text-champagne mb-4">Recent Lifts</h2>
+          <div className="flex items-baseline justify-between mb-4">
+            <div>
+              <h2 className="font-semibold text-champagne">Recent Lifts</h2>
+              <p className="text-xs text-muted">Kegunaan: menampilkan riwayat latihan SBD terbaru yang sudah dicatat</p>
+            </div>
+          </div>
           <div className="space-y-3">
             {recentLifts.map((lift) => (
               <div key={lift.id} className="flex justify-between items-center border-b border-hairline pb-2 last:border-0">
@@ -125,7 +132,8 @@ export default function Dashboard() {
         )}
         {w('lift_ratio') && liftRatio && (
           <div className="bg-raised p-4 sm:p-6 border border-hairline">
-            <h2 className="font-semibold text-champagne mb-3">Lift Ratios</h2>
+            <h2 className="font-semibold text-champagne">Lift Ratios</h2>
+            <p className="text-xs text-muted mb-3">Kegunaan: mendeteksi kelemahan rasio bench/squat dan deadlift/squat</p>
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="bg-lacquer p-2 border border-hairline">
                 <p className="text-[10px] text-muted">B/S</p>
@@ -166,6 +174,14 @@ export default function Dashboard() {
           onClose={() => setShowWidgetToggle(false)}
         />
       )}
+
+      <FloatingChat
+        mode="dashboard"
+        onSend={async (msg) => {
+          const res = await dashboardChat(msg)
+          return res.data.data.reply
+        }}
+      />
     </div>
   )
 }

@@ -38,35 +38,35 @@ func RequestAIAnalysis(userID uint, contextData string) (string, error) {
 		return "", fmt.Errorf("OPENROUTER_API_KEY not set")
 	}
 
+	systemPrompt := "Kamu adalah coach powerlifting berpengalaman. Berikan analisis singkat dan rekomendasi program dalam Bahasa Indonesia. Fokus pada data, bukan motivasi umum. Maksimal 200 kata."
+
+	return CallOpenRouter(apiKey, systemPrompt, contextData)
+}
+
+func CallOpenRouter(apiKey, systemPrompt, userContent string) (string, error) {
 	baseURL := os.Getenv("OPENROUTER_BASE_URL")
 	if baseURL == "" {
 		baseURL = "https://openrouter.ai/api/v1"
 	}
-
 	primaryModel := os.Getenv("OPENROUTER_MODEL_PRIMARY")
 	if primaryModel == "" {
 		primaryModel = "meta-llama/llama-3.1-8b-instruct:free"
 	}
-
-	fallbackModel := os.Getenv("OPENROUTER_MODEL_FALLBACK")
-	if fallbackModel == "" {
-		fallbackModel = "google/gemma-2-9b-it:free"
-	}
-
-	systemPrompt := "Kamu adalah coach powerlifting berpengalaman. Berikan analisis singkat dan rekomendasi program dalam Bahasa Indonesia. Fokus pada data, bukan motivasi umum. Maksimal 200 kata."
-
-	content, err := callOpenRouter(baseURL, apiKey, primaryModel, systemPrompt, contextData)
+	content, err := callOpenRouterAPI(baseURL, apiKey, primaryModel, systemPrompt, userContent)
 	if err != nil {
-		content, err = callOpenRouter(baseURL, apiKey, fallbackModel, systemPrompt, contextData)
+		fallbackModel := os.Getenv("OPENROUTER_MODEL_FALLBACK")
+		if fallbackModel == "" {
+			fallbackModel = "google/gemma-2-9b-it:free"
+		}
+		content, err = callOpenRouterAPI(baseURL, apiKey, fallbackModel, systemPrompt, userContent)
 		if err != nil {
-			return "", fmt.Errorf("OpenRouter analysis failed: %v", err)
+			return "", err
 		}
 	}
-
 	return content, nil
 }
 
-func callOpenRouter(baseURL, apiKey, model, systemPrompt, userContent string) (string, error) {
+func callOpenRouterAPI(baseURL, apiKey, model, systemPrompt, userContent string) (string, error) {
 	body := OpenRouterRequest{
 		Model: model,
 		Messages: []OpenRouterMessage{

@@ -16,7 +16,8 @@ export default function WidgetRecommendation() {
 
   return (
     <div className="bg-raised p-4 sm:p-6 border border-hairline">
-      <h2 className="font-semibold text-champagne mb-3">Rekomendasi</h2>
+      <h2 className="font-semibold text-champagne">Rekomendasi</h2>
+      <p className="text-xs text-muted mb-3">Kegunaan: menampilkan saran latihan otomatis berdasarkan data recovery, volume, dan goals</p>
       <div className="space-y-3">
         {recs.map((r) => (
           <RecommendationCard key={r.id} recommendation={r} />

@@ -16,7 +16,8 @@ export default function WidgetRecoveryScore() {
 
   return (
     <div className="bg-raised p-4 sm:p-6 border border-hairline">
-      <h2 className="font-semibold text-champagne mb-3">Recovery (7 hari)</h2>
+      <h2 className="font-semibold text-champagne">Recovery (7 hari)</h2>
+      <p className="text-xs text-muted mb-3">Kegunaan: memantau skor pemulihan dari sleep, stress, dan DOMS untuk hindari overtraining</p>
       <RecoverySummaryCard data={data} />
     </div>
   )

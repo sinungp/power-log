@@ -16,7 +16,8 @@ export default function WidgetGoalProgress() {
 
   return (
     <div className="bg-raised p-4 sm:p-6 border border-hairline">
-      <h2 className="font-semibold text-champagne mb-3">Progress Goal</h2>
+      <h2 className="font-semibold text-champagne">Progress Goal</h2>
+      <p className="text-xs text-muted mb-3">Kegunaan: memantau target SBD, body weight, atau kompetisi dan progressnya</p>
       <div className="space-y-3">
         {goals.slice(0, 3).map((g) => (
           <GoalProgressCard key={g.id} goal={g} />

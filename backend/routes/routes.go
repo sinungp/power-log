@@ -21,6 +21,10 @@ func Setup(app *fiber.App) {
 	// Calculator (public)
 	api.Post("/calculator/one-rm", handlers.CalculateOneRM)
 
+	// Chat (public + protected)
+	api.Post("/chat/public", handlers.PublicChat)
+	api.Post("/chat", middleware.Protected(), handlers.DashboardChat)
+
 	// Lifts (protected)
 	lifts := api.Group("/lifts", middleware.Protected())
 	lifts.Get("/", handlers.GetLifts)
