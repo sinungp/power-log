@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { getGoalProgress, createGoal, deleteGoal, achieveGoal } from '../api/goalApi'
 import type { GoalProgress } from '../types'
 import GoalProgressCard from '../components/GoalProgressCard'
+import FloatingChat from '../components/FloatingChat'
+import { dashboardChat } from '../api/chatApi'
 
 const goalTypes = [
   { value: 'squat_1rm', label: 'Squat 1RM' },
@@ -57,31 +59,35 @@ export default function Goals() {
   })
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="w-full space-y-10 animate-fade-in-up">
+      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-light text-champagne">Goals</h1>
-          <p className="text-muted text-sm">Target dan progress latihan</p>
+          <h1 className="text-3xl sm:text-4xl font-light tracking-tight text-champagne">
+            Personal <span className="text-gold font-normal">Goals</span>
+          </h1>
+          <p className="text-muted mt-1">Target angkatan, berat badan, dan kompetisi.</p>
         </div>
         <button onClick={() => setShowForm(true)}
-          className="px-4 py-2 bg-gold text-lacquer font-semibold text-sm hover:bg-gold-dim">
+          className="flex items-center gap-2 px-6 py-3 bg-gold text-lacquer font-bold rounded-xl shadow-lg shadow-gold/20 hover:bg-gold-dim transition-all text-sm uppercase tracking-widest">
           + Tambah Goal
         </button>
-      </div>
+      </header>
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-1 bg-raised/30 p-1 border border-hairline rounded-xl w-fit">
         {['active', 'achieved', 'all'].map((f) => (
           <button key={f} onClick={() => setFilter(f)}
-            className={`px-3 py-1 text-xs border ${filter === f ? 'border-gold text-gold bg-gold/10' : 'border-hairline text-muted hover:text-champagne'}`}>
+            className={`px-6 py-2 text-xs font-medium rounded-lg transition-all ${filter === f ? 'bg-gold text-lacquer shadow-lg shadow-gold/20' : 'text-muted hover:text-champagne hover:bg-hovered/50'}`}>
             {f === 'active' ? 'Aktif' : f === 'achieved' ? 'Tercapai' : 'Semua'}
           </button>
         ))}
       </div>
 
       {filtered.length === 0 ? (
-        <p className="text-sm text-muted py-8 text-center">Belum ada goal. Buat goal pertamamu!</p>
+        <div className="bg-raised/30 border border-hairline border-dashed rounded-2xl py-20 text-center">
+          <p className="text-muted italic">Belum ada goal yang sesuai filter.</p>
+        </div>
       ) : (
-        <div className="grid sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filtered.map((g) => (
             <GoalProgressCard
               key={g.id}
@@ -94,66 +100,81 @@ export default function Goals() {
       )}
 
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => setShowForm(false)}>
-          <div className="bg-raised border border-hairline w-full max-w-md mx-4 p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-champagne mb-4">Tambah Goal Baru</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs text-muted block mb-1">Tipe Goal</label>
-                <select value={form.goal_type} onChange={(e) => setForm({ ...form, goal_type: e.target.value })}
-                  className="w-full bg-lacquer border border-hairline px-3 py-2 text-sm text-champagne focus:border-gold outline-none">
-                  {goalTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-                </select>
-              </div>
-              {form.goal_type !== 'competition' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setShowForm(false)}>
+          <div className="bg-raised border border-hairline w-full max-w-lg rounded-2xl shadow-2xl p-6 sm:p-8 animate-fade-in-scale max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-champagne">Buat Goal <span className="text-gold">Baru</span></h2>
+              <button onClick={() => setShowForm(false)} className="text-muted hover:text-champagne transition-colors text-2xl">&times;</button>
+            </div>
+            
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <label className="text-xs text-muted block mb-1">Target ({form.goal_type === 'body_weight' ? 'kg' : 'kg'})</label>
+                  <label className="text-xs font-bold text-muted uppercase tracking-widest block mb-2">Tipe Goal</label>
+                  <select value={form.goal_type} onChange={(e) => setForm({ ...form, goal_type: e.target.value })}
+                    className="w-full bg-lacquer border border-hairline rounded-xl px-4 py-3 text-sm text-champagne focus:border-gold outline-none transition-all">
+                    {goalTypes.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-muted uppercase tracking-widest block mb-2">Target Tanggal</label>
+                  <input type="date" value={form.target_date}
+                    onChange={(e) => setForm({ ...form, target_date: e.target.value })}
+                    className="w-full bg-lacquer border border-hairline rounded-xl px-4 py-3 text-sm text-champagne focus:border-gold outline-none transition-all" />
+                </div>
+              </div>
+
+              {form.goal_type !== 'competition' ? (
+                <div>
+                  <label className="text-xs font-bold text-muted uppercase tracking-widest block mb-2">Target Nilai</label>
                   <input type="number" step="0.1" min="0" value={form.target_value || ''}
                     onChange={(e) => setForm({ ...form, target_value: parseFloat(e.target.value) || 0 })}
-                    className="w-full bg-lacquer border border-hairline px-3 py-2 text-sm text-champagne focus:border-gold outline-none" />
+                    className="w-full bg-lacquer border border-hairline rounded-xl px-4 py-3 text-lg font-bold text-gold focus:border-gold outline-none transition-all" placeholder="0.0" />
                 </div>
-              )}
-              <div>
-                <label className="text-xs text-muted block mb-1">Target Tanggal (opsional)</label>
-                <input type="date" value={form.target_date}
-                  onChange={(e) => setForm({ ...form, target_date: e.target.value })}
-                  className="w-full bg-lacquer border border-hairline px-3 py-2 text-sm text-champagne focus:border-gold outline-none" />
-              </div>
-              {form.goal_type === 'competition' && (
-                <>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
-                    <label className="text-xs text-muted block mb-1">Nama Kompetisi</label>
+                    <label className="text-xs font-bold text-muted uppercase tracking-widest block mb-2">Nama Kompetisi</label>
                     <input type="text" value={form.competition_name}
                       onChange={(e) => setForm({ ...form, competition_name: e.target.value })}
-                      className="w-full bg-lacquer border border-hairline px-3 py-2 text-sm text-champagne focus:border-gold outline-none" />
+                      className="w-full bg-lacquer border border-hairline rounded-xl px-4 py-3 text-sm text-champagne focus:border-gold outline-none transition-all" placeholder="National Open 2024" />
                   </div>
                   <div>
-                    <label className="text-xs text-muted block mb-1">Federasi</label>
+                    <label className="text-xs font-bold text-muted uppercase tracking-widest block mb-2">Federasi</label>
                     <input type="text" value={form.federation}
                       onChange={(e) => setForm({ ...form, federation: e.target.value })}
-                      className="w-full bg-lacquer border border-hairline px-3 py-2 text-sm text-champagne focus:border-gold outline-none" />
+                      className="w-full bg-lacquer border border-hairline rounded-xl px-4 py-3 text-sm text-champagne focus:border-gold outline-none transition-all" placeholder="PABSI / IPF" />
                   </div>
-                </>
+                </div>
               )}
+
               <div>
-                <label className="text-xs text-muted block mb-1">Catatan (opsional)</label>
+                <label className="text-xs font-bold text-muted uppercase tracking-widest block mb-2">Catatan Tambahan</label>
                 <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  className="w-full bg-lacquer border border-hairline px-3 py-2 text-sm text-champagne focus:border-gold outline-none resize-none" rows={3} />
+                  className="w-full bg-lacquer border border-hairline rounded-xl px-4 py-3 text-sm text-champagne focus:border-gold outline-none resize-none transition-all" rows={3} placeholder="Apa rencanamu untuk mencapai ini?" />
               </div>
             </div>
-            <div className="flex gap-3 mt-6">
+
+            <div className="flex flex-col sm:flex-row gap-3 mt-8">
               <button onClick={handleCreate}
-                className="flex-1 py-2 bg-gold text-lacquer font-semibold text-sm hover:bg-gold-dim">
-                Simpan
+                className="flex-1 py-4 bg-gold text-lacquer font-bold rounded-xl shadow-lg shadow-gold/20 hover:bg-gold-dim transition-all uppercase tracking-widest text-sm">
+                Simpan Goal
               </button>
               <button onClick={() => setShowForm(false)}
-                className="px-4 py-2 border border-hairline text-muted text-sm hover:text-champagne">
+                className="px-8 py-4 border border-hairline text-muted font-bold rounded-xl hover:bg-hovered hover:text-champagne transition-all uppercase tracking-widest text-sm">
                 Batal
               </button>
             </div>
           </div>
         </div>
       )}
+      <FloatingChat
+        mode="dashboard"
+        onSend={async (msg: string) => {
+          const res = await dashboardChat(msg)
+          return res.data.data.reply
+        }}
+      />
     </div>
   )
 }

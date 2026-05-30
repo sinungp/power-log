@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { getRecommendations, generateRecommendations, requestAIAnalysis, markRecommendationRead } from '../api/recommendationApi'
 import type { Recommendation } from '../types'
 import RecommendationCard from '../components/RecommendationCard'
+import FloatingChat from '../components/FloatingChat'
+import { dashboardChat } from '../api/chatApi'
 
 export default function Recommendations() {
   const [recs, setRecs] = useState<Recommendation[]>([])
@@ -85,6 +87,13 @@ export default function Recommendations() {
           ))}
         </div>
       )}
+      <FloatingChat
+        mode="dashboard"
+        onSend={async (msg: string) => {
+          const res = await dashboardChat(msg)
+          return res.data.data.reply
+        }}
+      />
     </div>
   )
 }

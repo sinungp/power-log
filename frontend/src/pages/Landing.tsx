@@ -20,6 +20,7 @@ export default function Landing() {
           const res = await publicChat(msg)
           return res.data.data.reply
         }}
+        style={{ right: '20px', bottom: '20px' }}
       />
     </>
   )

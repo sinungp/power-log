@@ -13,12 +13,12 @@
       --bg-raised: #141210;
       --bg-hovered: #1c1a18;
       --border: #2a2724;
-      --text: #a8a29e;
-      --text-muted: #787572;
+      --text: #dcdcdc;
+      --text-muted: #b0aead;
       --champagne: #f5f0e8;
       --gold: #c9a84c;
       --gold-dim: #a88a30;
-      --gold-glow: rgba(201,168,76,0.08);
+      --gold-glow: rgba(201,168,76,0.12);
     }
     html { scroll-behavior: smooth; }
     body {
@@ -120,6 +120,12 @@
     }
   </style>
 </head>
+<style>
+  @media (prefers-color-scheme: dark) {
+    .text-body { color: #ddd; }
+    .text-muted { color: #999; }
+  }
+</style>
 <body>
 
 <aside class="sidebar">

@@ -5,6 +5,8 @@ import { z } from 'zod'
 import { getBodyWeights, createBodyWeight, deleteBodyWeight, getLatestBodyWeight } from '../api/bodyWeightApi'
 import BodyWeightChart from '../components/BodyWeightChart'
 import type { BodyWeightLog, LatestBodyWeight } from '../types'
+import FloatingChat from '../components/FloatingChat'
+import { dashboardChat } from '../api/chatApi'
 
 const schema = z.object({
   weight_kg: z.coerce.number().positive('Weight must be positive'),
@@ -58,102 +60,116 @@ export default function BodyWeightPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-xl sm:text-2xl font-light text-champagne">Body Weight</h1>
-        <p className="text-muted text-sm sm:text-base">Track your body weight and weight class</p>
-      </div>
+    <>
+      <div className="w-full space-y-10 animate-fade-in-up">
+        <header className="flex items-center justify-between px-4 sm:px-6 lg:px-8 py-6 bg-raised/50 backdrop-blur-sm border-b border-hairline/30">
+          <h1 className="text-2xl sm:text-3xl font-light text-champagne">Body Weight</h1>
+          <p className="text-sm text-muted">Monitor weight and composition trends</p>
+        </header>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-raised p-4 sm:p-6 border border-hairline space-y-4">
-        {error && <div className="bg-danger/10 text-danger p-3 text-sm">{error}</div>}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-champagne mb-1">Weight (kg)</label>
-            <input
-              type="number"
-              step="0.01"
-              {...register('weight_kg')}
-              className="w-full px-3 sm:px-4 py-2 bg-lacquer border border-hairline text-body rounded-sm focus:border-gold focus:ring-1 focus:ring-gold outline-none text-sm"
-              placeholder="e.g. 75.5"
-            />
-            {errors.weight_kg && <p className="text-danger text-xs mt-1">{errors.weight_kg.message}</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-champagne mb-1">Date</label>
-            <input
-              type="date"
-              {...register('logged_at')}
-              className="w-full px-3 sm:px-4 py-2 bg-lacquer border border-hairline text-body rounded-sm focus:border-gold focus:ring-1 focus:ring-gold outline-none text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-champagne mb-1">Notes</label>
-            <input
-              type="text"
-              {...register('notes')}
-              className="w-full px-3 sm:px-4 py-2 bg-lacquer border border-hairline text-body rounded-sm focus:border-gold focus:ring-1 focus:ring-gold outline-none text-sm"
-              placeholder="Optional"
-            />
-          </div>
-        </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="px-6 py-2 bg-gold text-lacquer rounded-sm font-semibold hover:bg-gold-dim disabled:opacity-50 text-sm"
-        >
-          {loading ? 'Saving...' : 'Log Weight'}
-        </button>
-      </form>
-
-      {latest && (
-        <div className="bg-raised p-4 sm:p-6 border border-hairline">
-          <h2 className="font-semibold text-champagne mb-3">Latest Weight & Class</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-            <div className="bg-lacquer p-3 border border-hairline">
-              <p className="text-xs text-muted">Current Weight</p>
-              <p className="text-lg font-bold text-gold">{latest.weight_kg} kg</p>
-            </div>
-            <div className="bg-lacquer p-3 border border-hairline">
-              <p className="text-xs text-muted">Class</p>
-              <p className="text-lg font-bold text-champagne">{latest.recommended_class}</p>
-            </div>
-            <div className="bg-lacquer p-3 border border-hairline">
-              <p className="text-xs text-muted">Next Up</p>
-              <p className="text-lg font-bold text-patina">{latest.next_class_up || '-'}</p>
-            </div>
-            <div className="bg-lacquer p-3 border border-hairline">
-              <p className="text-xs text-muted">Next Down</p>
-              <p className="text-lg font-bold text-danger">{latest.next_class_down || '-'}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="bg-raised p-4 sm:p-6 border border-hairline">
-        <h2 className="font-semibold text-champagne mb-4">Weight Trend</h2>
-        <BodyWeightChart data={logs} recommendedClass={latest?.recommended_class} />
-      </div>
-
-      <div className="bg-raised border border-hairline">
-        <div className="p-4 border-b border-hairline">
-          <h2 className="font-semibold text-champagne">History</h2>
-        </div>
-        <div className="divide-y divide-hairline">
-          {logs.map((log) => (
-            <div key={log.id} className="flex items-center justify-between p-3 sm:p-4">
-              <div>
-                <span className="font-medium text-champagne">{log.weight_kg} kg</span>
-                <span className="text-muted text-xs ml-2">{log.logged_at}</span>
-                {log.notes && <span className="text-muted text-xs ml-2">— {log.notes}</span>}
+        <main className="p-6">
+          {latest && (
+            <div className="bg-lacquer/50 p-6 sm:p-8 border border-hairline rounded-xl mb-6 group hover:border-gold/30 transition-all">
+              <h2 className="text-lg font-bold text-champagne mb-4 flex items-center justify-between">
+                Latest Weight & Class
+                <span className="text-xs text-muted uppercase tracking-wider">({new Date().toLocaleDateString()})</span>
+              </h2>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+                <div>
+                  <p className="text-xs text-muted uppercase tracking-wider">Current Weight</p>
+                  <p className="text-3xl font-black text-gold">{latest.weight_kg} kg</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted uppercase tracking-wider">Weight Class</p>
+                  <p className="text-2xl font-bold text-champagne">{latest.recommended_class}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted uppercase tracking-wider">Next Up</p>
+                  <p className="text-lg font-bold text-patina">{latest.next_class_up || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted uppercase tracking-wider">Next Down</p>
+                  <p className="text-lg font-bold text-danger">{latest.next_class_down || '-'}</p>
+                </div>
               </div>
-              <button onClick={() => handleDelete(log.id)} className="text-danger hover:underline text-xs">Delete</button>
             </div>
-          ))}
-          {logs.length === 0 && (
-            <p className="p-6 text-center text-muted text-sm">No weight logs yet</p>
           )}
-        </div>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="bg-lacquer/50 p-6 sm:p-8 border border-hairline rounded-xl space-y-6 mb-6">
+            <h2 className="text-lg font-bold text-champagne mb-4">Log New Weight</h2>
+            {error && <div className="bg-danger/10 text-danger p-3 rounded-xl text-sm border border-danger/20">{error}</div>}
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-champagne mb-2">Weight (kg)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  {...register('weight_kg')}
+                  className="w-full px-4 py-3 bg-lacquer border border-hairline text-body rounded-xl focus:border-gold outline-none text-sm transition-all"
+                  placeholder="e.g. 75.5"
+                />
+                {errors.weight_kg && <p className="text-danger text-[10px]">{errors.weight_kg.message}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-champagne mb-2">Date</label>
+                <input
+                  type="date"
+                  {...register('logged_at')}
+                  className="w-full px-4 py-3 bg-lacquer border border-hairline text-body rounded-xl focus:border-gold outline-none text-sm transition-all"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-champagne mb-2">Notes</label>
+                <input
+                  type="text"
+                  {...register('notes')}
+                  className="w-full px-4 py-3 bg-lacquer border border-hairline text-body rounded-xl focus:border-gold outline-none resize-none placeholder:text-muted text-sm" placeholder="Optional" />
+              </div>
+            </div>
+            <div className="flex justify-center mt-6">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full sm:w-auto px-8 py-3 bg-gold text-lacquer rounded-xl font-semibold hover:bg-gold-dim transition-all disabled:opacity-50 uppercase tracking-widest"
+              >
+                {loading ? 'Saving...' : 'Log Weight'}
+              </button>
+            </div>
+          </form>
+
+          <div className="bg-lacquer/50 p-6 sm:p-8 border border-hairline rounded-xl mb-6">
+            <h2 className="text-lg font-bold text-champagne mb-4">Weight Trend</h2>
+            <BodyWeightChart data={logs} recommendedClass={latest?.recommended_class} />
+          </div>
+
+          <div className="bg-lacquer/50 p-6 sm:p-8 border border-hairline rounded-xl">
+            <h2 className="text-lg font-bold text-champagne mb-4">History</h2>
+            <div className="divide-y divide-hairline/30">
+              {logs.map((log) => (
+                <div key={log.id} className="flex items-center justify-between px-4 py-4 group hover:bg-hovered/20 transition-all">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-champagne">{log.weight_kg} kg</span>
+                    <span className="text-xs text-muted ml-2">{log.logged_at}</span>
+                    {log.notes && <span className="text-xs text-muted ml-1">— {log.notes}</span>}
+                  </div>
+                  <button onClick={() => handleDelete(log.id)} className="text-danger hover:underline text-xs">Delete</button>
+                </div>
+              ))}
+              {logs.length === 0 && (
+                <p className="p-6 text-center text-muted text-sm">No weight logs yet</p>
+              )}
+            </div>
+          </div>
+        </main>
       </div>
-    </div>
+      <FloatingChat
+        mode="dashboard"
+        onSend={async (msg: string) => {
+          const res = await dashboardChat(msg)
+          return res.data.data.reply
+        }}
+      />
+    </>
   )
 }

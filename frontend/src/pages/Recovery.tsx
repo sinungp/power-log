@@ -6,6 +6,8 @@ import { getRecoveryLogs, createRecoveryLog, deleteRecoveryLog, getRecoverySumma
 import RecoverySummaryCard from '../components/RecoverySummaryCard'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import type { RecoveryLog, RecoverySummary } from '../types'
+import FloatingChat from '../components/FloatingChat'
+import { dashboardChat } from '../api/chatApi'
 
 const schema = z.object({
   logged_at: z.string().min(1),
@@ -99,106 +101,152 @@ export default function RecoveryPage() {
   }))
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-xl sm:text-2xl font-light text-champagne">Recovery</h1>
-        <p className="text-muted text-sm sm:text-base">Track sleep, stress, and recovery</p>
-      </div>
+    <div className="w-full space-y-10 animate-fade-in-up">
+      <header>
+        <h1 className="text-3xl sm:text-4xl font-light tracking-tight text-champagne">
+          Recovery <span className="text-gold font-normal">Tracking</span>
+        </h1>
+        <p className="text-muted mt-1">Pantau kualitas tidur dan tingkat stres harian Anda.</p>
+      </header>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-raised p-4 sm:p-6 border border-hairline space-y-4">
-        {error && <div className="bg-danger/10 text-danger p-3 text-sm">{error}</div>}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-champagne mb-1">Sleep Hours</label>
-            <input type="range" min="4" max="10" step="0.5" {...register('sleep_hours', { valueAsNumber: true })}
-              className="w-full accent-gold" />
-            <span className="text-xs text-muted">{String(watchSleepH ?? 7)} hrs</span>
+      <form onSubmit={handleSubmit(onSubmit)} className="bg-raised/50 backdrop-blur-md p-6 sm:p-8 border border-hairline rounded-2xl shadow-xl space-y-6">
+        <h2 className="text-lg font-bold text-champagne">Log <span className="text-gold">Harian</span></h2>
+        {error && <div className="bg-danger/10 text-danger p-4 rounded-xl text-sm border border-danger/20">{error}</div>}
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <div className="group">
+              <div className="flex justify-between items-center mb-3">
+                <label className="text-xs font-bold text-muted uppercase tracking-widest">Waktu Tidur</label>
+                <span className="text-gold font-bold text-sm bg-gold/10 px-2 py-0.5 rounded-full">{String(watchSleepH ?? 7)} jam</span>
+              </div>
+              <input type="range" min="4" max="12" step="0.5" {...register('sleep_hours', { valueAsNumber: true })}
+                className="w-full h-2 bg-lacquer rounded-lg appearance-none cursor-pointer accent-gold" />
+            </div>
+
+            <div className="group">
+              <div className="flex justify-between items-center mb-3">
+                <label className="text-xs font-bold text-muted uppercase tracking-widest">Kualitas Tidur</label>
+                <span className="text-gold font-bold text-sm bg-gold/10 px-2 py-0.5 rounded-full">{String(watchSleepQ ?? 7)}/10</span>
+              </div>
+              <input type="range" min="1" max="10" {...register('sleep_quality', { valueAsNumber: true })}
+                className="w-full h-2 bg-lacquer rounded-lg appearance-none cursor-pointer accent-gold" />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-champagne mb-1">Sleep Quality</label>
-            <input type="range" min="1" max="10" {...register('sleep_quality', { valueAsNumber: true })}
-              className="w-full accent-gold" />
-            <span className="text-xs text-muted">{String(watchSleepQ ?? 7)}/10</span>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-champagne mb-1">Stress Level</label>
-            <input type="range" min="1" max="10" {...register('stress_level', { valueAsNumber: true })}
-              className="w-full accent-gold" />
-            <span className="text-xs text-muted">{String(watchStress ?? 5)}/10</span>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-champagne mb-1">DOMS (optional)</label>
-            <input type="range" min="1" max="5" {...register('doms_level', { valueAsNumber: true })}
-              className="w-full accent-gold" />
-            <span className="text-xs text-muted">{watchDoms != null ? String(watchDoms) : '-'}/5</span>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-champagne mb-1">Date</label>
-            <input type="date" {...register('logged_at')}
-              className="w-full px-3 py-2 bg-lacquer border border-hairline text-body rounded-sm focus:border-gold focus:ring-1 focus:ring-gold outline-none text-sm" />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-champagne mb-1">Notes</label>
-            <input type="text" {...register('notes')}
-              className="w-full px-3 py-2 bg-lacquer border border-hairline text-body rounded-sm focus:border-gold focus:ring-1 focus:ring-gold outline-none text-sm" placeholder="Optional" />
+
+          <div className="space-y-6">
+            <div className="group">
+              <div className="flex justify-between items-center mb-3">
+                <label className="text-xs font-bold text-muted uppercase tracking-widest">Tingkat Stres</label>
+                <span className="text-danger font-bold text-sm bg-danger/10 px-2 py-0.5 rounded-full">{String(watchStress ?? 5)}/10</span>
+              </div>
+              <input type="range" min="1" max="10" {...register('stress_level', { valueAsNumber: true })}
+                className="w-full h-2 bg-lacquer rounded-lg appearance-none cursor-pointer accent-danger" />
+            </div>
+
+            <div className="group">
+              <div className="flex justify-between items-center mb-3">
+                <label className="text-xs font-bold text-muted uppercase tracking-widest">Tingkat DOMS</label>
+                <span className="text-patina font-bold text-sm bg-patina/10 px-2 py-0.5 rounded-full">{watchDoms != null ? String(watchDoms) : '-'}/5</span>
+              </div>
+              <input type="range" min="1" max="5" {...register('doms_level', { valueAsNumber: true })}
+                className="w-full h-2 bg-lacquer rounded-lg appearance-none cursor-pointer accent-patina" />
+            </div>
           </div>
         </div>
-        <div className="flex items-center justify-between">
-          <div className="text-sm">
-            <span className="text-muted">Recovery Score: </span>
-            <span className="text-gold font-bold">{previewScore}</span>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-hairline/50">
+          <div>
+            <label className="text-[10px] font-bold text-muted uppercase tracking-widest block mb-2">Tanggal</label>
+            <input type="date" {...register('logged_at')}
+              className="w-full px-4 py-3 bg-lacquer border border-hairline text-body rounded-xl focus:border-gold outline-none text-sm transition-all" />
+          </div>
+          <div>
+            <label className="text-[10px] font-bold text-muted uppercase tracking-widest block mb-2">Catatan Tambahan</label>
+            <input type="text" {...register('notes')}
+              className="w-full px-4 py-3 bg-lacquer border border-hairline text-body rounded-xl focus:border-gold outline-none text-sm transition-all" placeholder="Opsional..." />
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-4">
+          <div className="flex items-center gap-3 bg-lacquer/50 px-6 py-3 rounded-2xl border border-hairline">
+            <span className="text-xs font-medium text-muted uppercase">Estimated Score:</span>
+            <span className="text-3xl font-black text-gold animate-gold-pulse">{previewScore}</span>
           </div>
           <button type="submit" disabled={loading}
-            className="px-6 py-2 bg-gold text-lacquer rounded-sm font-semibold hover:bg-gold-dim disabled:opacity-50 text-sm">
-            {loading ? 'Saving...' : 'Log Recovery'}
+            className="w-full sm:w-auto px-12 py-4 bg-gold text-lacquer rounded-xl font-black shadow-lg shadow-gold/20 hover:bg-gold-dim transition-all uppercase tracking-widest text-sm disabled:opacity-50">
+            {loading ? 'Menyimpan...' : 'Log Recovery Sekarang'}
           </button>
         </div>
       </form>
 
       {summary && (
-        <div className="bg-raised p-4 sm:p-6 border border-hairline">
-          <h2 className="font-semibold text-champagne mb-4">Recovery Summary (7 days)</h2>
+        <section className="bg-raised/30 backdrop-blur-sm p-6 sm:p-8 border border-hairline rounded-2xl shadow-xl">
+          <h2 className="text-lg font-bold text-champagne mb-6 uppercase tracking-widest opacity-80">Summary <span className="text-gold">7 Hari Terakhir</span></h2>
           <RecoverySummaryCard data={summary} />
-        </div>
+        </section>
       )}
 
       {chartData.length > 0 && (
-        <div className="bg-raised p-4 sm:p-6 border border-hairline">
-          <h2 className="font-semibold text-champagne mb-4">Recovery Trend</h2>
-          <div className="h-56">
+        <section className="bg-raised/30 backdrop-blur-sm p-6 sm:p-8 border border-hairline rounded-2xl shadow-xl">
+          <h2 className="text-lg font-bold text-champagne mb-8 uppercase tracking-widest opacity-80">Recovery <span className="text-gold">Trend</span></h2>
+          <div className="h-64 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="oklch(20% 0.005 95)" />
-                <XAxis dataKey="date" stroke="oklch(45% 0.005 95)" fontSize={11} />
-                <YAxis stroke="oklch(45% 0.005 95)" fontSize={11} domain={[0, 100]} />
-                <Tooltip contentStyle={{ background: 'oklch(11% 0.005 95)', border: '1px solid oklch(20% 0.005 95)', borderRadius: 0, fontSize: 12 }} />
-                <Line type="monotone" dataKey="score" stroke="oklch(84% 0.19 80.46)" strokeWidth={2} dot={{ r: 3 }} name="Score" />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                <XAxis dataKey="date" stroke="#666" fontSize={11} tickLine={false} axisLine={false} dy={10} />
+                <YAxis stroke="#666" fontSize={11} domain={[0, 100]} tickLine={false} axisLine={false} dx={-10} />
+                <Tooltip 
+                  contentStyle={{ background: '#141210', border: '1px solid #2a2724', borderRadius: '12px', fontSize: 12, boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }} 
+                  itemStyle={{ color: '#c9a84c' }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="score" 
+                  stroke="#c9a84c" 
+                  strokeWidth={4} 
+                  dot={{ r: 6, fill: '#141210', stroke: '#c9a84c', strokeWidth: 2 }} 
+                  activeDot={{ r: 8, strokeWidth: 0 }}
+                  name="Recovery Score" 
+                />
               </LineChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </section>
       )}
 
-      <div className="bg-raised border border-hairline">
-        <div className="p-4 border-b border-hairline">
-          <h2 className="font-semibold text-champagne">Recent Logs</h2>
+      <section className="bg-raised/30 backdrop-blur-sm border border-hairline rounded-2xl overflow-hidden shadow-xl">
+        <div className="px-6 py-4 border-b border-hairline bg-hovered/30">
+          <h2 className="font-semibold text-champagne">History Logs</h2>
         </div>
-        <div className="divide-y divide-hairline">
+        <div className="divide-y divide-hairline/30">
           {logs.map((log) => (
-            <div key={log.id} className="flex items-center justify-between p-3 sm:p-4">
-              <div className="text-sm">
-                <span className="text-champagne font-medium">{log.logged_at}</span>
-                <span className="text-muted ml-2">{log.sleep_hours}h · Q{log.sleep_quality} · S{log.stress_level}</span>
-                {log.doms_level && <span className="text-muted ml-1">· DOMS {log.doms_level}</span>}
+            <div key={log.id} className="flex items-center justify-between px-6 py-5 group hover:bg-hovered/20 transition-all">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                <span className="text-sm font-bold text-champagne">{log.logged_at}</span>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 bg-lacquer border border-hairline rounded text-[10px] text-muted font-medium">💤 {log.sleep_hours}h</span>
+                  <span className="px-2 py-0.5 bg-lacquer border border-hairline rounded text-[10px] text-muted font-medium">🌟 Q{log.sleep_quality}</span>
+                  <span className="px-2 py-0.5 bg-lacquer border border-hairline rounded text-[10px] text-muted font-medium">⚡ S{log.stress_level}</span>
+                </div>
               </div>
-              <button onClick={() => handleDelete(log.id)} className="text-danger hover:underline text-xs">Delete</button>
+              <button onClick={() => handleDelete(log.id)} className="text-danger opacity-0 group-hover:opacity-100 transition-all hover:scale-110 p-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/></svg>
+              </button>
             </div>
           ))}
           {logs.length === 0 && (
-            <p className="p-6 text-center text-muted text-sm">No recovery logs yet</p>
+            <div className="p-12 text-center text-muted italic text-sm">Belum ada riwayat log recovery.</div>
           )}
         </div>
-      </div>
+      </section>
+      <FloatingChat
+        mode="dashboard"
+        onSend={async (msg: string) => {
+          const res = await dashboardChat(msg)
+          return res.data.data.reply
+        }}
+      />
     </div>
   )
 }
