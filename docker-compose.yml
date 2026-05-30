@@ -1,0 +1,47 @@
+services:
+  db:
+    image: mariadb:10.11
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: rootpass
+      MARIADB_DATABASE: powerlog_db
+      MARIADB_USER: powerlog_user
+      MARIADB_PASSWORD: powerlog_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      APP_PORT: "8080"
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_USER: powerlog_user
+      DB_PASS: powerlog_pass
+      DB_NAME: powerlog_db
+      JWT_SECRET: ganti_dengan_random_string_panjang_di_production
+      JWT_EXPIRE_HOURS: "72"
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  mariadb_data:

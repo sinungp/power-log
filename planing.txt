@@ -1,0 +1,447 @@
+================================================================================
+  PLANNING DOKUMEN: POWERLIFTING SAAS APP
+  Stack: Golang (BE) | MariaDB (DB) | TypeScript (FE)
+  Dibuat untuk: Eksekusi oleh model AI (cost-efficient)
+================================================================================
+
+INSTRUKSI UNTUK MODEL:
+- Baca seluruh dokumen ini sebelum mulai generate kode
+- Ikuti urutan fase secara berurutan
+- Setiap task bersifat atomic dan bisa dieksekusi mandiri
+- Gunakan konvensi penamaan yang sudah ditentukan di bawah
+- Jangan skip bagian "Constraint & Catatan Teknis"
+- Jika sudah buatkan dockerfile untuk app fe, be, dan database, karna saya ingin aplikasi ini running di docker
+
+================================================================================
+BAGIAN 1: GAMBARAN UMUM PROYEK
+================================================================================
+
+NAMA APLIKASI  : PowerLog (atau sesuaikan)
+TUJUAN         : Aplikasi SaaS untuk atlet dan penghobi powerlifting, mencakup
+                 kalkulator 1RM, pencatatan lift SBD, rekomendasi aksesori,
+                 serta checklist warmup dan cooldown.
+TARGET USER    : Atlet powerlifting amatir hingga intermediate, personal trainer
+MODEL BISNIS   : Freemium (fitur dasar gratis, fitur lanjutan berbayar)
+
+================================================================================
+BAGIAN 2: TECH STACK
+================================================================================
+
+BACKEND:
+  - Language   : Go (Golang) 1.22+
+  - Framework  : Fiber v2 (atau net/http + chi router)
+  - ORM        : GORM
+  - Auth       : JWT (golang-jwt/jwt v5)
+  - Env Config : godotenv
+  - Validator  : go-playground/validator
+
+DATABASE:
+  - Engine     : MariaDB 10.11+
+  - Migrasi    : GORM AutoMigrate (dev) / SQL file (prod)
+  - Charset    : utf8mb4
+
+FRONTEND:
+  - Language   : TypeScript
+  - Framework  : React 18 + Vite
+  - Styling    : Tailwind CSS v3
+  - State      : Zustand
+  - HTTP Client: Axios
+  - UI Lib     : shadcn/ui (opsional)
+  - Form       : React Hook Form + Zod
+
+HALAMAN TAMBAHAN:
+  - Landing Page: Route `/` (Hero, Fitur, Pricing, Cara Kerja, Testimonial, Footer)
+  - App Routes  : `/app/*` (dashboard, calculator, dll)
+
+INFRASTRUKTUR (wajib dari awal):
+  - Container  : Docker + Docker Compose
+  - Reverse Proxy: Nginx
+  - CI/CD      : GitHub Actions (opsional)
+
+================================================================================
+BAGIAN 3: STRUKTUR DIREKTORI
+================================================================================
+
+--- BACKEND ---
+
+/backend
+├── main.go
+├── .env
+├── go.mod
+├── go.sum
+├── config/
+│   └── config.go          # load env, DB connection
+├── database/
+│   └── db.go              # init MariaDB via GORM
+├── middleware/
+│   └── auth.go            # JWT middleware
+├── models/
+│   ├── user.go
+│   ├── session.go
+│   ├── lift_record.go
+│   ├── accessory.go
+│   └── checklist.go
+├── handlers/
+│   ├── auth_handler.go
+│   ├── calculator_handler.go
+│   ├── lift_handler.go
+│   ├── accessory_handler.go
+│   └── checklist_handler.go
+├── routes/
+│   └── routes.go
+└── utils/
+    ├── response.go        # standard JSON response helper
+    └── calculator.go      # logika 1RM formula
+
+--- FRONTEND ---
+
+/frontend
+├── index.html
+├── vite.config.ts
+├── tsconfig.json
+├── package.json
+├── .env
+├── src/
+│   ├── main.tsx
+│   ├── App.tsx
+│   ├── api/
+│   │   └── axiosInstance.ts
+│   ├── store/
+│   │   └── authStore.ts
+│   ├── types/
+│   │   └── index.ts
+│   ├── pages/
+│   │   ├── Landing.tsx
+│   │   ├── Login.tsx
+│   │   ├── Register.tsx
+│   │   ├── Dashboard.tsx
+│   │   ├── Calculator.tsx
+│   │   ├── LiftRecord.tsx
+│   │   ├── Accessory.tsx
+│   │   └── Checklist.tsx
+│   ├── components/
+│   │   ├── Navbar.tsx
+│   │   ├── NavbarLanding.tsx
+│   │   ├── Footer.tsx
+│   │   ├── HeroSection.tsx
+│   │   ├── FeaturesSection.tsx
+│   │   ├── PricingSection.tsx
+│   │   ├── HowItWorksSection.tsx
+│   │   ├── TestimonialsSection.tsx
+│   │   ├── ProtectedRoute.tsx
+│   │   └── [komponen lainnya per halaman]
+│   └── layouts/
+│       ├── AppLayout.tsx
+│       └── LandingLayout.tsx
+
+================================================================================
+BAGIAN 4: SKEMA DATABASE (MariaDB)
+================================================================================
+
+-- Tabel: users
+CREATE TABLE users (
+  id         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  name       VARCHAR(100)        NOT NULL,
+  email      VARCHAR(150) UNIQUE NOT NULL,
+  password   VARCHAR(255)        NOT NULL,
+  plan       ENUM('free','pro')  NOT NULL DEFAULT 'free',
+  created_at DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabel: lift_records (pencatatan SBD)
+CREATE TABLE lift_records (
+  id         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id    BIGINT UNSIGNED     NOT NULL,
+  lift_type  ENUM('squat','bench','deadlift') NOT NULL,
+  weight_kg  DECIMAL(6,2)        NOT NULL,
+  reps       TINYINT UNSIGNED    NOT NULL,
+  rpe        DECIMAL(3,1)        NULL,      -- optional: Rate of Perceived Exertion
+  notes      TEXT                NULL,
+  lifted_at  DATE                NOT NULL,
+  created_at DATETIME            NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabel: accessories (master data rekomendasi gerakan aksesori)
+CREATE TABLE accessories (
+  id           BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  target_lift  ENUM('squat','bench','deadlift','general') NOT NULL,
+  name         VARCHAR(150)     NOT NULL,
+  description  TEXT             NULL,
+  sets_reps    VARCHAR(50)      NULL,       -- contoh: "3x10-12"
+  difficulty   ENUM('beginner','intermediate','advanced') NOT NULL DEFAULT 'beginner'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabel: checklists (warmup / cooldown template)
+CREATE TABLE checklists (
+  id           BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  type         ENUM('warmup','cooldown') NOT NULL,
+  name         VARCHAR(150)     NOT NULL,
+  description  TEXT             NULL,
+  duration_sec INT UNSIGNED     NULL        -- durasi dalam detik (opsional)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabel: user_checklist_logs (tracking checklist per sesi)
+CREATE TABLE user_checklist_logs (
+  id           BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id      BIGINT UNSIGNED  NOT NULL,
+  checklist_id BIGINT UNSIGNED  NOT NULL,
+  is_done      BOOLEAN          NOT NULL DEFAULT FALSE,
+  logged_at    DATE             NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (checklist_id) REFERENCES checklists(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+================================================================================
+BAGIAN 5: API ENDPOINT
+================================================================================
+
+BASE URL: /api/v1
+
+--- AUTH ---
+POST   /auth/register          # daftar akun baru
+POST   /auth/login             # login, return JWT
+GET    /auth/me                # get profil user (protected)
+
+--- KALKULATOR 1RM ---
+POST   /calculator/one-rm      # hitung 1RM dari weight + reps
+  Body: { weight_kg: float, reps: int, formula: "epley"|"brzycki"|"lombardi" }
+  Resp: { one_rm: float, formula_used: string }
+
+--- LIFT RECORDS (SBD) ---
+GET    /lifts                  # list semua catatan lift milik user (protected)
+POST   /lifts                  # tambah catatan lift baru (protected)
+GET    /lifts/:id              # detail satu catatan (protected)
+PUT    /lifts/:id              # edit catatan (protected)
+DELETE /lifts/:id              # hapus catatan (protected)
+GET    /lifts/summary          # ringkasan PR per jenis lift (protected)
+
+--- AKSESORI ---
+GET    /accessories                       # list semua aksesori
+GET    /accessories?target=squat          # filter by target lift
+GET    /accessories?target=bench
+GET    /accessories?target=deadlift
+GET    /accessories?difficulty=beginner   # filter by difficulty
+
+--- CHECKLIST ---
+GET    /checklists?type=warmup            # list item warmup
+GET    /checklists?type=cooldown          # list item cooldown
+POST   /checklists/log                    # simpan log checklist harian (protected)
+GET    /checklists/log?date=YYYY-MM-DD    # ambil log checklist by tanggal (protected)
+
+================================================================================
+BAGIAN 6: LOGIKA BISNIS - KALKULATOR 1RM
+================================================================================
+
+Formula yang harus diimplementasikan di utils/calculator.go:
+
+1. Epley (default)
+   1RM = weight * (1 + reps / 30)
+
+2. Brzycki
+   1RM = weight * (36 / (37 - reps))
+
+3. Lombardi
+   1RM = weight * reps^0.10
+
+Aturan:
+- Jika reps == 1, langsung return weight sebagai 1RM
+- Jika reps > 10, tampilkan warning: "Estimasi kurang akurat untuk reps > 10"
+- Selalu round hasil ke 2 desimal
+- Semua formula dihitung sekaligus, kembalikan semua hasil ke FE
+
+================================================================================
+BAGIAN 7: FASE IMPLEMENTASI
+================================================================================
+
+--- FASE 1: SETUP PROYEK (lakukan ini pertama) ---
+Task 1.1: Init Go module, install dependencies (fiber, gorm, mysql driver, jwt, godotenv, validator)
+Task 1.2: Buat file config/config.go - load env DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME, JWT_SECRET
+Task 1.3: Buat file database/db.go - koneksi GORM ke MariaDB
+Task 1.4: Buat semua model di models/ sesuai skema database Bagian 4
+Task 1.5: Buat utils/response.go dengan helper: SuccessResponse(), ErrorResponse()
+Task 1.6: Buat utils/calculator.go dengan semua formula 1RM
+Task 1.7: Init React + Vite + TypeScript di /frontend
+Task 1.8: Setup Tailwind CSS di frontend
+Task 1.9: Buat axiosInstance.ts dengan baseURL dari .env dan interceptor JWT
+
+--- FASE 2: AUTH ---
+Task 2.1: Implement POST /auth/register (hash password dengan bcrypt)
+Task 2.2: Implement POST /auth/login (verify password, return JWT)
+Task 2.3: Buat middleware/auth.go (validasi JWT, inject user_id ke context)
+Task 2.4: Implement GET /auth/me
+Task 2.5: FE - Buat halaman Register.tsx dengan form (nama, email, password)
+Task 2.6: FE - Buat halaman Login.tsx dengan form (email, password)
+Task 2.7: FE - Buat authStore.ts di Zustand (simpan token + user info)
+Task 2.8: FE - Buat ProtectedRoute.tsx (redirect ke /login jika tidak ada token)
+
+--- FASE 3: KALKULATOR 1RM ---
+Task 3.1: Implement POST /calculator/one-rm di handler
+Task 3.2: FE - Buat halaman Calculator.tsx
+  - Input: berat (kg), reps, pilih formula (dropdown)
+  - Output: tampilkan hasil semua 3 formula sekaligus dalam card/tabel
+  - Tambahkan tombol "Simpan ke Catatan Lift"
+
+--- FASE 4: PENCATATAN LIFT SBD ---
+Task 4.1: Implement semua endpoint /lifts (CRUD + summary)
+Task 4.2: FE - Buat halaman LiftRecord.tsx
+  - Form tambah catatan: jenis lift (squat/bench/deadlift), berat, reps, RPE, tanggal, catatan
+  - Tabel list catatan dengan filter per jenis lift
+  - Tampilkan PR (personal record) per jenis lift di bagian atas
+  - Tombol edit dan hapus per baris
+
+--- FASE 5: REKOMENDASI AKSESORI ---
+Task 5.1: Buat SQL seed data accessories (minimal 5 per target lift)
+Task 5.2: Implement GET /accessories dengan filter query param
+Task 5.3: FE - Buat halaman Accessory.tsx
+  - Tab/filter: Squat | Bench | Deadlift | General
+  - Card per gerakan aksesori: nama, deskripsi, sets/reps, difficulty badge
+  - Filter tambahan: difficulty level
+
+--- FASE 6: CHECKLIST WARMUP & COOLDOWN ---
+Task 6.1: Buat SQL seed data checklists (minimal 5 warmup, 5 cooldown)
+Task 6.2: Implement GET /checklists?type=warmup|cooldown
+Task 6.3: Implement POST /checklists/log dan GET /checklists/log
+Task 6.4: FE - Buat halaman Checklist.tsx
+  - Tab: Warmup | Cooldown
+  - Checkbox list per item, bisa dicentang
+  - Simpan progres ke backend (per hari)
+  - Indicator: "X/Y selesai hari ini"
+
+--- FASE 7: DASHBOARD ---
+Task 7.1: FE - Buat halaman Dashboard.tsx
+  - Ringkasan: total lift dicatat bulan ini
+  - PR terbaru (squat/bench/deadlift)
+  - Checklist hari ini (warmup + cooldown status)
+  - Shortcut ke semua fitur
+
+--- FASE 8: DOCKER & DEPLOYMENT (opsional) ---
+Task 8.1: Buat Dockerfile untuk backend Go
+Task 8.2: Buat Dockerfile untuk frontend (multi-stage build + nginx)
+Task 8.3: Buat docker-compose.yml (backend + frontend + mariadb)
+Task 8.4: Buat nginx.conf untuk reverse proxy
+
+================================================================================
+BAGIAN 8: SEED DATA AKSESORI (contoh)
+================================================================================
+
+SQUAT:
+- Goblet Squat | Sets: 3x10 | Difficulty: beginner | Target: quads, core stability
+- Bulgarian Split Squat | Sets: 3x8/leg | Difficulty: intermediate | Target: quads, glutes
+- Leg Press | Sets: 4x10-12 | Difficulty: beginner | Target: quads
+- Romanian Deadlift | Sets: 3x10 | Difficulty: intermediate | Target: hamstrings, glutes
+- Box Squat | Sets: 4x5 | Difficulty: intermediate | Target: squat technique, posterior chain
+
+BENCH:
+- Dumbbell Flye | Sets: 3x12 | Difficulty: beginner | Target: chest stretch
+- Close Grip Bench Press | Sets: 3x8 | Difficulty: intermediate | Target: triceps
+- Incline Dumbbell Press | Sets: 3x10 | Difficulty: beginner | Target: upper chest
+- Face Pull | Sets: 3x15 | Difficulty: beginner | Target: rear delt, shoulder health
+- Tricep Pushdown | Sets: 3x12 | Difficulty: beginner | Target: triceps
+
+DEADLIFT:
+- Romanian Deadlift | Sets: 3x10 | Difficulty: beginner | Target: hamstrings
+- Deficit Deadlift | Sets: 3x5 | Difficulty: advanced | Target: pull mechanics
+- Barbell Row | Sets: 4x8 | Difficulty: intermediate | Target: upper back
+- Hip Thrust | Sets: 3x12 | Difficulty: beginner | Target: glutes
+- Farmer Walk | Sets: 3x30m | Difficulty: beginner | Target: grip, core
+
+WARMUP CHECKLIST:
+- 5 menit cardio ringan (jalan/sepeda statis)
+- Hip circle 10 reps per sisi
+- Leg swing 10 reps per sisi
+- Band pull apart 15 reps
+- Cat-cow stretch 10 reps
+- Empty bar squat 2x10
+- Activation glute bridge 15 reps
+
+COOLDOWN CHECKLIST:
+- Pigeon pose 60 detik per sisi
+- Quad stretch 30 detik per sisi
+- Hamstring stretch 30 detik per sisi
+- Child's pose 60 detik
+- Chest opener stretch 30 detik
+- Deep breathing 5 menit
+
+================================================================================
+BAGIAN 9: CONSTRAINT & CATATAN TEKNIS
+================================================================================
+
+1. JWT: Simpan token di localStorage FE, kirim via header Authorization: Bearer <token>
+2. Password: Gunakan bcrypt cost 12
+3. GORM: Gunakan soft delete (gorm.Model embed) untuk lift_records
+4. Error response harus konsisten: { "success": false, "message": "...", "data": null }
+5. Success response: { "success": true, "message": "...", "data": { ... } }
+6. Semua endpoint protected wajib validasi JWT middleware
+7. MariaDB charset: utf8mb4, collation: utf8mb4_unicode_ci
+8. Go: gunakan context dari Fiber, jangan langsung panic, selalu handle error
+9. FE: gunakan Zod schema untuk validasi form sebelum submit
+10. FE: loading state dan error state wajib di handle di setiap form/fetch
+11. Berat input selalu dalam KG
+12. RPE skala 6.0 - 10.0 dengan increment 0.5
+13. Kalkulator 1RM tidak perlu auth (endpoint publik)
+14. Endpoint aksesori dan checklist template tidak perlu auth (data master publik)
+
+================================================================================
+BAGIAN 10: ENVIRONMENT VARIABLES
+================================================================================
+
+--- BACKEND (.env) ---
+APP_PORT=8080
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=powerlog_user
+DB_PASS=powerlog_pass
+DB_NAME=powerlog_db
+JWT_SECRET=ganti_dengan_random_string_panjang
+JWT_EXPIRE_HOURS=72
+
+--- FRONTEND (.env) ---
+VITE_API_BASE_URL=http://localhost:8080/api/v1
+
+================================================================================
+BAGIAN 11: URUTAN PERINTAH UNTUK MODEL
+================================================================================
+
+Instruksi eksekusi untuk model AI (jalankan berurutan):
+
+PROMPT 1: "Baca planning di atas. Buat setup awal backend Go: init module, 
+           install semua dependency, buat config.go, db.go, dan semua models 
+           sesuai skema database di Bagian 4. Sertakan go.mod."
+
+PROMPT 2: "Buat utils/response.go dan utils/calculator.go sesuai Bagian 6. 
+           Sertakan unit test untuk ketiga formula 1RM."
+
+PROMPT 3: "Implementasikan auth: register, login, middleware JWT, dan endpoint 
+           /auth/me sesuai Bagian 5 dan Fase 2. Gunakan bcrypt."
+
+PROMPT 4: "Implementasikan semua endpoint /lifts (CRUD + summary) dan 
+           /calculator/one-rm sesuai Bagian 5."
+
+PROMPT 5: "Implementasikan endpoint /accessories dan /checklists beserta 
+           SQL seed data sesuai Bagian 8."
+
+PROMPT 6: "Buat setup frontend: Vite + React + TypeScript + Tailwind CSS. 
+           Buat axiosInstance.ts, authStore.ts Zustand, dan types/index.ts 
+           sesuai struktur di Bagian 3."
+
+PROMPT 7: "Buat halaman Login.tsx dan Register.tsx dengan form lengkap, 
+           validasi Zod, integrasi ke API auth, dan ProtectedRoute.tsx."
+
+PROMPT 8: "Buat halaman Calculator.tsx sesuai deskripsi Fase 3 Task 3.2."
+
+PROMPT 9: "Buat halaman LiftRecord.tsx sesuai deskripsi Fase 4 Task 4.2."
+
+PROMPT 10: "Buat halaman Accessory.tsx sesuai deskripsi Fase 5 Task 5.3."
+
+PROMPT 11: "Buat halaman Checklist.tsx sesuai deskripsi Fase 6 Task 6.4."
+
+PROMPT 12: "Buat halaman Dashboard.tsx sesuai deskripsi Fase 7 Task 7.1."
+
+PROMPT 13 (opsional): "Buat Dockerfile untuk backend dan frontend, serta 
+                        docker-compose.yml sesuai Fase 8."
+
+================================================================================
+END OF DOCUMENT
+================================================================================
