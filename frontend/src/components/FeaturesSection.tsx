@@ -3,11 +3,11 @@ import { useInView } from '../hooks/useInView'
 const features = [
   {
     title: '1RM Calculator',
-    description: 'Calculate your one-rep max using Epley, Brzycki, or Lombardi formulas. Get instant results.',
+    description: 'Calculate your one-rep max using Epley, Brzycki, or Lombardi formulas. Instant results.',
   },
   {
     title: 'Lift Tracking',
-    description: 'Log every squat, bench, and deadlift session. Track your personal records over time.',
+    description: 'Log every squat, bench, and deadlift session with weight, reps, and RPE.',
   },
   {
     title: 'Exercise Library',
@@ -15,15 +15,39 @@ const features = [
   },
   {
     title: 'Warmup & Cooldown',
-    description: 'Follow structured warmup and cooldown checklists to optimize performance and recovery.',
+    description: 'Follow structured warmup and cooldown checklists for every session.',
   },
   {
-    title: 'Progress Dashboard',
-    description: 'See your monthly volume, latest PRs, and daily checklist status at a glance.',
+    title: 'Goal Setting',
+    description: 'Set SBD 1RM, body weight, or competition goals with auto progress tracking.',
   },
   {
-    title: 'Free & Pro Plans',
-    description: 'Start with free essential tools. Upgrade to Pro for advanced analytics and more.',
+    title: 'Recovery Logging',
+    description: 'Track sleep, stress, and DOMS. Get a daily recovery score out of 100.',
+  },
+  {
+    title: 'AI Recommendations',
+    description: 'Rule-based and AI-powered training suggestions based on your actual data.',
+  },
+  {
+    title: 'Notifications & Reminders',
+    description: 'Get reminded to log lifts and recovery. Telegram push support.',
+  },
+  {
+    title: 'Custom Dashboard',
+    description: 'Toggle widgets: goal progress, recovery score, recommendations, and more.',
+  },
+  {
+    title: 'Analytics & Charts',
+    description: 'Visualize weekly volume, intensity zones, lift ratios, and body weight trends.',
+  },
+  {
+    title: 'Onboarding Wizard',
+    description: 'Personalized setup wizard tailors the app to your experience and goals.',
+  },
+  {
+    title: 'OAuth2 Login',
+    description: 'Sign in with Google, Facebook, or Twitter in one click.',
   },
 ]
 

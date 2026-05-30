@@ -18,6 +18,13 @@ type Config struct {
 
 	AppURL string
 	FrontendURL string
+
+	OpenRouterAPIKey   string
+	OpenRouterBaseURL  string
+	OpenRouterModel    string
+	OpenRouterFallback string
+	TelegramBotToken   string
+	SchedulerEnabled   string
 }
 
 func Load() *Config {
@@ -35,6 +42,13 @@ func Load() *Config {
 
 		AppURL:      getEnv("APP_URL", "http://localhost:8080"),
 		FrontendURL: getEnv("FRONTEND_URL", "http://localhost"),
+
+		OpenRouterAPIKey:   getEnv("OPENROUTER_API_KEY", ""),
+		OpenRouterBaseURL:  getEnv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
+		OpenRouterModel:    getEnv("OPENROUTER_MODEL_PRIMARY", "meta-llama/llama-3.1-8b-instruct:free"),
+		OpenRouterFallback: getEnv("OPENROUTER_MODEL_FALLBACK", "google/gemma-2-9b-it:free"),
+		TelegramBotToken:   getEnv("TELEGRAM_BOT_TOKEN", ""),
+		SchedulerEnabled:   getEnv("SCHEDULER_ENABLED", "false"),
 	}
 }
 

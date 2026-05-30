@@ -3,7 +3,11 @@ import { Link } from 'react-router-dom'
 import axiosInstance from '../api/axiosInstance'
 import { getRecoverySummary } from '../api/recoveryApi'
 import { getLiftRatio } from '../api/analyticsApi'
-import RecoverySummaryCard from '../components/RecoverySummaryCard'
+import { getDashboardConfig, updateDashboardConfig } from '../api/dashboardConfigApi'
+import WidgetGoalProgress from '../components/WidgetGoalProgress'
+import WidgetRecommendation from '../components/WidgetRecommendation'
+import WidgetRecoveryScore from '../components/WidgetRecoveryScore'
+import DashboardWidgetToggle from '../components/DashboardWidgetToggle'
 
 import type { ApiResponse, LiftRecord, ChecklistLog, RecoverySummary, LiftRatio } from '../types'
 
@@ -12,6 +16,17 @@ export default function Dashboard() {
   const [checklistSummary, setChecklistSummary] = useState({ done: 0, total: 0 })
   const [recoverySummary, setRecoverySummary] = useState<RecoverySummary | null>(null)
   const [liftRatio, setLiftRatio] = useState<LiftRatio | null>(null)
+  const [widgets, setWidgets] = useState<Record<string, boolean>>({
+    pr_summary: true,
+    weekly_volume: true,
+    recovery_score: true,
+    goal_progress: true,
+    recommendation: true,
+    wilks_score: false,
+    weight_class: false,
+    lift_ratio: true,
+  })
+  const [showWidgetToggle, setShowWidgetToggle] = useState(false)
 
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0]
@@ -21,8 +36,9 @@ export default function Dashboard() {
       axiosInstance.get<ApiResponse<ChecklistLog[]>>(`/checklists/log?date=${today}`),
       getRecoverySummary(1).catch(() => null),
       getLiftRatio().catch(() => null),
+      getDashboardConfig().catch(() => null),
     ])
-      .then(([liftsRes, logsRes, recRes, ratioRes]) => {
+      .then(([liftsRes, logsRes, recRes, ratioRes, dashRes]) => {
         setRecentLifts(liftsRes.data.data || [])
         const logs = logsRes.data.data || []
         setChecklistSummary({
@@ -31,22 +47,45 @@ export default function Dashboard() {
         })
         if (recRes) setRecoverySummary(recRes.data.data)
         if (ratioRes) setLiftRatio(ratioRes.data.data)
+        if (dashRes && dashRes.data.data?.widgets) {
+          setWidgets(dashRes.data.data.widgets)
+        }
       })
       .catch(() => {})
   }, [])
 
+  const handleSaveWidgets = async (newWidgets: Record<string, boolean>) => {
+    setWidgets(newWidgets)
+    setShowWidgetToggle(false)
+    try {
+      await updateDashboardConfig(newWidgets)
+    } catch {
+      // silent
+    }
+  }
+
+  const w = (key: string) => widgets[key] !== false
+
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-xl sm:text-2xl font-light text-champagne">Dashboard</h1>
-        <p className="text-muted text-sm sm:text-base">Welcome back to PowerLog</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-light text-champagne">Dashboard</h1>
+          <p className="text-muted text-sm sm:text-base">Welcome back to PowerLog</p>
+        </div>
+        <button
+          onClick={() => setShowWidgetToggle(true)}
+          className="text-xs px-3 py-1.5 border border-hairline text-muted hover:text-champagne"
+        >
+          Atur Widget
+        </button>
       </div>
 
       <div className="grid md:grid-cols-3 gap-4">
         <Link to="/app/lifts" className="bg-raised p-4 sm:p-6 border border-hairline hover:bg-hovered transition-colors">
           <h3 className="font-semibold text-champagne mb-1">Total Lifts</h3>
           <p className="text-2xl sm:text-3xl font-bold text-gold">{recentLifts.length}</p>
-          <p className="text-sm text-muted mt-1">This month</p>
+          <p className="text-sm text-muted mt-1">Month</p>
         </Link>
         <Link to="/app/lifts" className="bg-raised p-4 sm:p-6 border border-hairline hover:bg-hovered transition-colors">
           <h3 className="font-semibold text-champagne mb-1">Checklist</h3>
@@ -76,27 +115,15 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="space-y-3">
-        <h2 className="font-semibold text-champagne">Quick Links</h2>
-        <div className="flex flex-wrap gap-3">
-          <Link to="/app/calculator" className="px-4 py-2 bg-gold text-lacquer rounded-sm text-sm font-semibold hover:bg-gold-dim">Calculator</Link>
-          <Link to="/app/lifts" className="px-4 py-2 border border-gold text-gold rounded-sm text-sm font-semibold hover:bg-gold hover:text-lacquer">Log Lift</Link>
-          <Link to="/app/body-weight" className="px-4 py-2 border border-gold text-gold rounded-sm text-sm font-semibold hover:bg-gold hover:text-lacquer">Weights</Link>
-          <Link to="/app/recovery" className="px-4 py-2 border border-gold text-gold rounded-sm text-sm font-semibold hover:bg-gold hover:text-lacquer">Recovery</Link>
-          <Link to="/app/analytics" className="px-4 py-2 border border-gold text-gold rounded-sm text-sm font-semibold hover:bg-gold hover:text-lacquer">Analytics</Link>
-          <Link to="/app/accessories" className="px-4 py-2 border border-gold text-gold rounded-sm text-sm font-semibold hover:bg-gold hover:text-lacquer">Accessories</Link>
-          <Link to="/app/checklist" className="px-4 py-2 border border-gold text-gold rounded-sm text-sm font-semibold hover:bg-gold hover:text-lacquer">Checklist</Link>
-        </div>
-      </div>
+      {w('goal_progress') && <WidgetGoalProgress />}
+
+      {w('recommendation') && <WidgetRecommendation />}
 
       <div className="grid md:grid-cols-2 gap-4">
-        {recoverySummary && (
-          <div className="bg-raised p-4 sm:p-6 border border-hairline">
-            <h2 className="font-semibold text-champagne mb-3">Recovery (7 days)</h2>
-            <RecoverySummaryCard data={recoverySummary} />
-          </div>
+        {w('recovery_score') && recoverySummary && (
+          <WidgetRecoveryScore />
         )}
-        {liftRatio && (
+        {w('lift_ratio') && liftRatio && (
           <div className="bg-raised p-4 sm:p-6 border border-hairline">
             <h2 className="font-semibold text-champagne mb-3">Lift Ratios</h2>
             <div className="grid grid-cols-3 gap-2 text-center">
@@ -116,6 +143,29 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      <div className="space-y-3">
+        <h2 className="font-semibold text-champagne">Quick Links</h2>
+        <div className="flex flex-wrap gap-3">
+          <Link to="/app/calculator" className="px-4 py-2 bg-gold text-lacquer rounded-sm text-sm font-semibold hover:bg-gold-dim">Calculator</Link>
+          <Link to="/app/lifts" className="px-4 py-2 border border-gold text-gold rounded-sm text-sm font-semibold hover:bg-gold hover:text-lacquer">Log Lift</Link>
+          <Link to="/app/goals" className="px-4 py-2 border border-gold text-gold rounded-sm text-sm font-semibold hover:bg-gold hover:text-lacquer">Goals</Link>
+          <Link to="/app/body-weight" className="px-4 py-2 border border-gold text-gold rounded-sm text-sm font-semibold hover:bg-gold hover:text-lacquer">Weights</Link>
+          <Link to="/app/recovery" className="px-4 py-2 border border-gold text-gold rounded-sm text-sm font-semibold hover:bg-gold hover:text-lacquer">Recovery</Link>
+          <Link to="/app/analytics" className="px-4 py-2 border border-gold text-gold rounded-sm text-sm font-semibold hover:bg-gold hover:text-lacquer">Analytics</Link>
+          <Link to="/app/recommendations" className="px-4 py-2 border border-gold text-gold rounded-sm text-sm font-semibold hover:bg-gold hover:text-lacquer">Rekom</Link>
+          <Link to="/app/accessories" className="px-4 py-2 border border-gold text-gold rounded-sm text-sm font-semibold hover:bg-gold hover:text-lacquer">Accessories</Link>
+          <Link to="/app/checklist" className="px-4 py-2 border border-gold text-gold rounded-sm text-sm font-semibold hover:bg-gold hover:text-lacquer">Checklist</Link>
+        </div>
+      </div>
+
+      {showWidgetToggle && (
+        <DashboardWidgetToggle
+          widgets={widgets}
+          onSave={handleSaveWidgets}
+          onClose={() => setShowWidgetToggle(false)}
+        />
+      )}
     </div>
   )
 }

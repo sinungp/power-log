@@ -1,0 +1,641 @@
+================================================================================
+  PLANNING DOKUMEN: FITUR PERSONALISASI POWERLIFTING SAAS APP
+  Sifat     : Addons — tidak mengubah kode/tabel lama
+  Stack     : Golang (BE) | MariaDB (DB) | TypeScript + React (FE)
+  Referensi : powerlifting_saas_plan.txt + powerlifting_saas_feature_addons.txt
+  Dibuat untuk: Eksekusi oleh model AI (cost-efficient)
+================================================================================
+
+INSTRUKSI UNTUK MODEL:
+- Dokumen ini adalah ADDONS LANJUTAN dari dua planning sebelumnya
+- Jangan ubah tabel, handler, atau route yang sudah ada
+- Hanya tambah tabel baru, handler baru, dan route baru
+- Ikuti konvensi response { success, message, data } yang sudah ada
+- Ikuti struktur folder yang sudah ada
+- Jalankan fase dan prompt secara berurutan
+
+================================================================================
+FITUR YANG DITAMBAHKAN:
+  1. Onboarding Wizard (profil, level, goal, preferensi, notifikasi)
+  2. Goal Setting & Tracking (target 1RM, berat badan, kompetisi)
+  3. Engine Rekomendasi Hybrid (rule-based + AI via OpenRouter)
+  4. Notifikasi & Reminder (in-app + Telegram opsional)
+  5. Dashboard Customizable (widget toggle per user)
+================================================================================
+
+================================================================================
+BAGIAN 1: SKEMA DATABASE BARU
+================================================================================
+
+-- Tabel: user_profiles (data onboarding & preferensi)
+CREATE TABLE user_profiles (
+  id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id             BIGINT UNSIGNED      NOT NULL UNIQUE,
+  sex                 ENUM('male','female') NOT NULL,
+  birth_date          DATE                 NULL,
+  experience_level    ENUM('beginner','intermediate','advanced') NOT NULL DEFAULT 'beginner',
+  has_competed        BOOLEAN              NOT NULL DEFAULT FALSE,
+  training_days_week  TINYINT UNSIGNED     NOT NULL DEFAULT 3,
+  primary_focus       ENUM('sbd','squat','bench','deadlift') NOT NULL DEFAULT 'sbd',
+  equipment_type      ENUM('full','home','minimal') NOT NULL DEFAULT 'full',
+  onboarding_done     BOOLEAN              NOT NULL DEFAULT FALSE,
+  created_at          DATETIME             NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at          DATETIME             NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabel: user_goals (target per kategori)
+CREATE TABLE user_goals (
+  id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id         BIGINT UNSIGNED  NOT NULL,
+  goal_type       ENUM('squat_1rm','bench_1rm','deadlift_1rm','body_weight','competition') NOT NULL,
+  target_value    DECIMAL(8,2)     NOT NULL,   -- kg untuk lift/bw, 0 untuk kompetisi
+  target_date     DATE             NULL,
+  competition_name VARCHAR(200)    NULL,        -- hanya untuk goal_type=competition
+  federation      VARCHAR(100)     NULL,        -- IPF, USAPL, dll
+  is_achieved     BOOLEAN          NOT NULL DEFAULT FALSE,
+  achieved_at     DATE             NULL,
+  notes           TEXT             NULL,
+  created_at      DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at      DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabel: recommendations (cache rekomendasi rule-based + AI)
+CREATE TABLE recommendations (
+  id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id         BIGINT UNSIGNED  NOT NULL,
+  source          ENUM('rule','ai') NOT NULL,
+  category        ENUM('volume','recovery','weakness','peaking','general') NOT NULL,
+  title           VARCHAR(200)     NOT NULL,
+  body            TEXT             NOT NULL,
+  is_read         BOOLEAN          NOT NULL DEFAULT FALSE,
+  generated_at    DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  expires_at      DATETIME         NULL,       -- null = tidak expire
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabel: notifications (in-app notification log)
+CREATE TABLE notifications (
+  id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id         BIGINT UNSIGNED  NOT NULL,
+  type            ENUM('reminder_recovery','reminder_lift','goal_achieved',
+                       'goal_near','competition_countdown','general') NOT NULL,
+  title           VARCHAR(200)     NOT NULL,
+  message         TEXT             NOT NULL,
+  is_read         BOOLEAN          NOT NULL DEFAULT FALSE,
+  sent_at         DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabel: notification_preferences (preferensi reminder per user)
+CREATE TABLE notification_preferences (
+  id                      BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id                 BIGINT UNSIGNED NOT NULL UNIQUE,
+  reminder_recovery       BOOLEAN         NOT NULL DEFAULT TRUE,
+  reminder_recovery_time  TIME            NOT NULL DEFAULT '20:00:00',
+  reminder_lift           BOOLEAN         NOT NULL DEFAULT TRUE,
+  reminder_lift_days      VARCHAR(20)     NOT NULL DEFAULT '1,3,5', -- hari (1=Senin..7=Minggu)
+  telegram_chat_id        VARCHAR(100)    NULL,    -- opsional Telegram integration
+  created_at              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at              DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabel: user_dashboard_config (widget preference)
+CREATE TABLE user_dashboard_configs (
+  id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id         BIGINT UNSIGNED NOT NULL UNIQUE,
+  widgets         JSON            NOT NULL,
+  -- Contoh nilai JSON:
+  -- {
+  --   "pr_summary": true,
+  --   "weekly_volume": true,
+  --   "recovery_score": true,
+  --   "goal_progress": true,
+  --   "recommendation": true,
+  --   "wilks_score": false,
+  --   "weight_class": false,
+  --   "lift_ratio": true
+  -- }
+  updated_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+================================================================================
+BAGIAN 2: API ENDPOINT BARU
+================================================================================
+
+BASE URL: /api/v1
+Semua endpoint bertanda [AUTH] wajib pakai JWT middleware yang sudah ada.
+
+--- ONBOARDING ---
+GET  /onboarding/status               [AUTH]
+  Response: { onboarding_done: bool, current_step: int }
+
+POST /onboarding/profile              [AUTH]
+  Body: { sex, birth_date, experience_level, has_competed }
+
+POST /onboarding/training-preference  [AUTH]
+  Body: { training_days_week, primary_focus, equipment_type }
+
+POST /onboarding/complete             [AUTH]
+  Tandai onboarding_done = true di user_profiles
+
+--- GOAL SETTING ---
+GET    /goals                         [AUTH]
+  Response: list semua goal aktif milik user + progress % per goal
+
+POST   /goals                         [AUTH]
+  Body: { goal_type, target_value, target_date, competition_name,
+          federation, notes }
+
+PUT    /goals/:id                     [AUTH]
+DELETE /goals/:id                     [AUTH]
+
+GET    /goals/progress                [AUTH]
+  Response: array goal dengan field tambahan:
+  {
+    ...goal fields,
+    current_value: float,     // nilai terkini dari data user
+    progress_pct: float,      // (current / target) * 100, max 100
+    estimated_date: date,     // estimasi kapan tercapai berdasarkan rate of progress
+    days_remaining: int       // jika target_date di-set
+  }
+
+POST /goals/:id/achieve               [AUTH]
+  Tandai goal sebagai achieved, set achieved_at = today
+
+--- REKOMENDASI ---
+GET  /recommendations                 [AUTH]
+  Query params: ?category=volume|recovery|weakness|peaking|general&limit=5
+  Response: list rekomendasi terbaru (rule-based + AI, gabung)
+
+POST /recommendations/generate        [AUTH]
+  Trigger generate rekomendasi rule-based untuk user ini sekarang
+  Response: list rekomendasi baru yang di-generate
+
+POST /recommendations/ai-analysis     [AUTH]
+  Trigger AI analysis via OpenRouter (on-demand, bukan otomatis)
+  Body: { context_weeks: int (default 4) }
+  Response: { recommendation_id: int, title, body }
+  Catatan: rate limit 1x per 24 jam per user (cek recommendations terbaru)
+
+PUT  /recommendations/:id/read        [AUTH]
+  Tandai rekomendasi sebagai sudah dibaca
+
+--- NOTIFIKASI ---
+GET  /notifications                   [AUTH]
+  Query params: ?limit=20&unread_only=true
+  Response: list notifikasi + unread_count
+
+PUT  /notifications/:id/read          [AUTH]
+PUT  /notifications/read-all          [AUTH]
+
+GET  /notifications/preferences       [AUTH]
+PUT  /notifications/preferences       [AUTH]
+  Body: { reminder_recovery, reminder_recovery_time, reminder_lift,
+          reminder_lift_days, telegram_chat_id }
+
+--- DASHBOARD CONFIG ---
+GET  /dashboard/config                [AUTH]
+  Response: { widgets: { ... } }
+  Jika belum ada config → return default (semua true kecuali wilks & weight_class)
+
+PUT  /dashboard/config                [AUTH]
+  Body: { widgets: { pr_summary, weekly_volume, recovery_score,
+                     goal_progress, recommendation, wilks_score,
+                     weight_class, lift_ratio } }
+
+================================================================================
+BAGIAN 3: LOGIKA BISNIS
+================================================================================
+
+--- 3A. LOGIKA GOAL PROGRESS ---
+
+Untuk setiap goal_type, current_value diambil dari:
+  squat_1rm     → estimasi 1RM squat terbaru dari lift_records (Epley)
+  bench_1rm     → estimasi 1RM bench terbaru dari lift_records
+  deadlift_1rm  → estimasi 1RM deadlift terbaru dari lift_records
+  body_weight   → entri terbaru dari body_weight_logs
+  competition   → tidak ada current_value, tampilkan countdown hari saja
+
+estimated_date (untuk lift goals):
+  1. Hitung rate_of_progress = (current_1rm - oldest_1rm_30days) / 30 (kg/hari)
+  2. Jika rate_of_progress <= 0 → estimated_date = null (tidak bisa estimasi)
+  3. days_needed = (target_value - current_value) / rate_of_progress
+  4. estimated_date = today + days_needed
+
+Auto-achieve detection (jalankan di cron job harian):
+  Cek semua goal is_achieved = false
+  Jika current_value >= target_value → set is_achieved = true, achieved_at = today
+  Insert notifikasi type=goal_achieved
+
+--- 3B. RULE-BASED RECOMMENDATION ENGINE ---
+
+Jalankan saat: user trigger POST /recommendations/generate
+Input: baca semua data user dari DB (lift_records, recovery_logs, body_weight_logs, user_goals)
+
+Aturan (cek berurutan, bisa generate lebih dari 1 rekomendasi):
+
+RULE 1 — Recovery buruk:
+  Kondisi: avg recovery_score 3 hari terakhir < 50
+  Category: recovery
+  Title: "Recovery kamu sedang rendah"
+  Body: "Rata-rata recovery score kamu 3 hari terakhir di bawah 50.
+         Pertimbangkan untuk mengurangi volume latihan minggu ini sebesar 20-30%
+         dan prioritaskan tidur minimal 8 jam."
+
+RULE 2 — Volume plateau:
+  Kondisi: total_volume_kg minggu ini <= total_volume_kg 2 minggu lalu * 1.02
+           DAN recovery_score avg 7 hari > 60
+  Category: volume
+  Title: "Volume latihan kamu stagnan"
+  Body: "Volume minggu ini tidak meningkat signifikan padahal recovery kamu baik.
+         Coba tambahkan 1 set di lift utama atau naikkan berat 2.5kg."
+
+RULE 3 — Weakness detection:
+  Kondisi: weakness dari /analytics/lift-ratio bukan "balanced"
+  Category: weakness
+  Title: "Terdeteksi kelemahan di lift [nama lift]"
+  Body: "Rasio [lift] kamu berada di luar range ideal. Tambahkan 1-2 sesi
+         aksesori khusus [lift] per minggu selama 4-6 minggu ke depan."
+
+RULE 4 — Approaching competition:
+  Kondisi: ada goal_type=competition dengan target_date dalam 28 hari ke depan
+  Category: peaking
+  Title: "Kompetisi [nama] tinggal X hari lagi"
+  Body: "Saatnya masuk fase peaking. Kurangi volume 40%, pertahankan intensitas
+         tinggi (>85% 1RM), dan mulai latihan attempt selection."
+
+RULE 5 — Goal near:
+  Kondisi: ada goal dengan progress_pct >= 90 dan is_achieved = false
+  Category: general
+  Title: "Goal [nama] hampir tercapai!"
+  Body: "Kamu sudah mencapai [X]% dari target [goal]. Jaga konsistensi,
+         kamu tinggal [Y] kg lagi dari target."
+
+RULE 6 — Tidak ada data recovery:
+  Kondisi: tidak ada recovery_log dalam 3 hari terakhir
+  Category: recovery
+  Title: "Kamu belum mencatat recovery hari ini"
+  Body: "Catat tidur dan stres harianmu agar sistem bisa memberikan
+         rekomendasi yang lebih akurat."
+
+Setelah generate:
+  - Simpan semua rekomendasi baru ke tabel recommendations
+  - Set expires_at = NOW() + 7 hari
+  - Hapus rekomendasi lama yang sudah expires_at < NOW() milik user ini
+
+--- 3C. AI RECOMMENDATION (OpenRouter) ---
+
+Endpoint: POST /recommendations/ai-analysis
+Rate limit: 1x per 24 jam per user (cek di DB)
+
+Prompt yang dikirim ke OpenRouter:
+
+  System:
+  "Kamu adalah coach powerlifting berpengalaman. Berikan analisis singkat
+   dan rekomendasi program dalam Bahasa Indonesia. Fokus pada data,
+   bukan motivasi umum. Maksimal 200 kata."
+
+  User:
+  "Berikut data atlet powerlifting saya selama [N] minggu terakhir:
+   - Level: [experience_level]
+   - Estimasi 1RM: Squat [X]kg | Bench [Y]kg | Deadlift [Z]kg
+   - Volume mingguan rata-rata: [X]kg total
+   - Recovery score rata-rata: [X]/100
+   - Rata-rata tidur: [X] jam, kualitas [X]/10
+   - Rata-rata stres: [X]/10
+   - Kelemahan terdeteksi: [weakness]
+   - Goal aktif: [list goal + progress]
+   - Rekomendasi rule-based saat ini: [list title rekomendasi rule]
+   
+   Berikan analisis dan 2-3 rekomendasi program spesifik untuk minggu depan."
+
+Model: gunakan "meta-llama/llama-3.1-8b-instruct:free" (OpenRouter free tier)
+      atau "google/gemma-2-9b-it:free" sebagai fallback
+
+Simpan response ke tabel recommendations dengan source='ai'
+
+Config OpenRouter di .env:
+  OPENROUTER_API_KEY=sk-or-...
+  OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+
+--- 3D. LOGIKA CRON JOB ---
+
+Buat scheduler di Go menggunakan goroutine + time.Ticker
+Jalankan setiap jam (setiap 60 menit):
+
+Job 1 — Reminder Recovery:
+  Untuk setiap user dengan reminder_recovery = true:
+    Cek jam sekarang == reminder_recovery_time (toleransi ±5 menit)
+    Cek apakah user belum input recovery hari ini
+    Jika ya → insert ke notifications (type=reminder_recovery)
+    Jika telegram_chat_id ada → kirim pesan via Telegram Bot API
+
+Job 2 — Reminder Lift:
+  Untuk setiap user dengan reminder_lift = true:
+    Cek hari ini ada di reminder_lift_days
+    Cek user belum input lift_record hari ini
+    Jika ya → insert ke notifications (type=reminder_lift)
+
+Job 3 — Auto-achieve Goals:
+  Jalankan 1x sehari (jam 00:05)
+  Loop semua goal is_achieved=false
+  Cek current_value vs target_value
+  Update dan insert notifikasi jika tercapai
+
+Job 4 — Cleanup:
+  Jalankan 1x sehari (jam 03:00)
+  Hapus recommendations yang sudah expires_at < NOW()
+  Hapus notifications yang sudah > 90 hari
+
+--- 3E. LOGIKA DEFAULT DASHBOARD CONFIG ---
+
+Jika user belum punya config (GET /dashboard/config return 404 dari DB):
+  Return default:
+  {
+    "pr_summary":       true,
+    "weekly_volume":    true,
+    "recovery_score":   true,
+    "goal_progress":    true,
+    "recommendation":   true,
+    "wilks_score":      false,
+    "weight_class":     false,
+    "lift_ratio":       true
+  }
+
+================================================================================
+BAGIAN 4: STRUKTUR FILE BARU
+================================================================================
+
+--- BACKEND (tambahan) ---
+
+models/
+  user_profile.go
+  user_goal.go
+  recommendation.go
+  notification.go
+  notification_preference.go
+  user_dashboard_config.go
+
+handlers/
+  onboarding_handler.go
+  goal_handler.go
+  recommendation_handler.go
+  notification_handler.go
+  dashboard_config_handler.go
+
+utils/
+  recommendation_engine.go   // semua rule-based logic (Bagian 3B)
+  openrouter.go              // HTTP client ke OpenRouter API
+  goal_progress.go           // kalkulasi progress, estimated_date
+
+scheduler/
+  scheduler.go               // init goroutine + ticker
+  jobs/
+    reminder_job.go          // Job 1 & 2
+    goal_check_job.go        // Job 3
+    cleanup_job.go           // Job 4
+
+main.go                      // TAMBAHKAN: jalankan scheduler.Start() di goroutine
+
+routes/routes.go             // TAMBAHKAN route baru, jangan hapus yang lama
+
+--- FRONTEND (tambahan) ---
+
+src/pages/
+  Onboarding.tsx             // wizard multi-step
+  Goals.tsx                  // list + form goal
+  Recommendations.tsx        // list rekomendasi + tombol "Minta Analisis AI"
+  Notifications.tsx          // list notifikasi in-app
+  NotificationPreferences.tsx // form preferensi reminder
+
+src/components/
+  OnboardingStep.tsx         // wrapper step wizard
+  GoalProgressCard.tsx       // card progress per goal + estimated date
+  RecommendationCard.tsx     // card rekomendasi (badge: rule/AI)
+  NotificationBell.tsx       // icon bell di navbar + unread count badge
+  DashboardWidgetToggle.tsx  // toggle per widget di settings dashboard
+  WidgetGoalProgress.tsx     // widget dashboard: goal progress
+  WidgetRecommendation.tsx   // widget dashboard: rekomendasi terbaru
+  WidgetRecoveryScore.tsx    // widget dashboard: recovery score (update dari addons)
+
+src/api/
+  onboardingApi.ts
+  goalApi.ts
+  recommendationApi.ts
+  notificationApi.ts
+  dashboardConfigApi.ts
+
+src/store/
+  notificationStore.ts       // Zustand: unread_count, polling setiap 60 detik
+
+================================================================================
+BAGIAN 5: DETAIL HALAMAN FRONTEND
+================================================================================
+
+--- Onboarding.tsx ---
+- Tampil otomatis jika onboarding_done = false setelah login
+- Multi-step wizard (5 langkah, ada progress bar di atas)
+- Step 1: Sex, tanggal lahir
+- Step 2: Experience level (card pilihan dengan deskripsi singkat), pernah kompetisi
+- Step 3: Goal 1RM per lift + target berat badan + kompetisi (semua opsional)
+- Step 4: Training days/week (slider 2-6), primary focus, equipment type
+- Step 5: Toggle reminder recovery + jam, toggle reminder lift + hari
+- Tombol Back & Next, tombol Skip di kanan bawah (lewati onboarding)
+- Setelah complete → redirect ke Dashboard
+
+--- Goals.tsx ---
+- Tombol "+ Tambah Goal" → modal form
+- List goal aktif: card per goal dengan:
+    * Progress bar (current vs target)
+    * Persentase progress
+    * Estimasi tanggal tercapai
+    * Countdown jika ada target_date
+    * Badge "Tercapai! 🎉" jika is_achieved = true
+- Filter: Aktif / Tercapai
+- Tombol edit & hapus per goal
+
+--- Recommendations.tsx ---
+- Section atas: tombol "Generate Rekomendasi" (trigger rule-based)
+- Tombol "Minta Analisis AI" → loading state, disable jika sudah hit 24 jam
+  (tampilkan "Tersedia lagi dalam X jam")
+- List rekomendasi dengan:
+    * Badge sumber: "Rule-based" (biru) atau "AI" (ungu)
+    * Badge kategori: volume/recovery/weakness/peaking/general
+    * Title + body
+    * Timestamp
+    * Mark as read saat diklik
+
+--- NotificationBell.tsx ---
+- Icon lonceng di Navbar
+- Badge merah dengan angka unread_count
+- Klik → dropdown/popover list 5 notifikasi terbaru
+- Link "Lihat semua" → Notifications.tsx
+- Poll GET /notifications?unread_only=true setiap 60 detik via Zustand store
+
+--- Dashboard.tsx (UPDATE) ---
+- Tambahkan tombol "⚙️ Atur Widget" di pojok kanan atas dashboard
+- Klik → DashboardWidgetToggle modal/sidebar
+- Dashboard hanya render widget yang enabled di user_dashboard_configs
+- Urutan widget default: PR Summary → Goal Progress → Recommendation →
+  Weekly Volume → Recovery Score → Lift Ratio → Wilks → Weight Class
+- Widget yang disabled tidak di-render sama sekali (bukan hidden)
+- Tambahkan NotificationBell ke Navbar (update Navbar.tsx)
+
+================================================================================
+BAGIAN 6: ENVIRONMENT VARIABLES TAMBAHAN
+================================================================================
+
+--- BACKEND (.env tambahan) ---
+OPENROUTER_API_KEY=sk-or-ganti_dengan_key_kamu
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+OPENROUTER_MODEL_PRIMARY=meta-llama/llama-3.1-8b-instruct:free
+OPENROUTER_MODEL_FALLBACK=google/gemma-2-9b-it:free
+TELEGRAM_BOT_TOKEN=opsional_isi_jika_pakai_telegram
+SCHEDULER_ENABLED=true
+
+================================================================================
+BAGIAN 7: CONSTRAINT & CATATAN TEKNIS
+================================================================================
+
+1.  Onboarding: setelah login, FE cek GET /onboarding/status → jika
+    onboarding_done = false, redirect ke /onboarding sebelum Dashboard
+2.  Onboarding boleh di-skip (tombol Skip) → set onboarding_done = true
+    dengan data minimal (default values)
+3.  OpenRouter: gunakan timeout 30 detik, handle error gracefully —
+    jika OpenRouter gagal, return error dengan pesan "Analisis AI sedang
+    tidak tersedia, coba lagi nanti" (jangan crash handler)
+4.  Scheduler: jalankan di goroutine terpisah di main.go, bukan blocking
+    go scheduler.Start(db)
+5.  Telegram integration: opsional — hanya kirim jika telegram_chat_id
+    tidak null dan TELEGRAM_BOT_TOKEN di-set di env
+6.  user_dashboard_configs.widgets disimpan sebagai JSON di MariaDB —
+    gunakan GORM dengan tipe datatypes.JSON atau serialisasi manual
+7.  Rate limit AI: cek di DB, bukan in-memory (supaya restart server
+    tidak reset counter)
+8.  Rekomendasi rule-based: jangan insert duplikat — cek apakah rekomendasi
+    dengan category yang sama sudah ada dan belum expires dalam 24 jam
+9.  FE polling notification: gunakan setInterval di Zustand store,
+    clear interval saat user logout
+10. Goal estimated_date: jika rate_of_progress <= 0 atau data kurang dari
+    7 hari, return null dan tampilkan "Belum cukup data untuk estimasi"
+11. Semua slider di onboarding dan preferences: gunakan komponen yang
+    konsisten dengan halaman Recovery.tsx yang sudah dibuat
+12. Semua response error dari OpenRouter harus di-log di server
+    (fmt.Printf atau logger) untuk debugging
+
+================================================================================
+BAGIAN 8: URUTAN PROMPT UNTUK MODEL
+================================================================================
+
+PROMPT 1:
+"Baca planning personalisasi ini. Buat semua tabel baru sesuai Bagian 1:
+user_profiles, user_goals, recommendations, notifications,
+notification_preferences, user_dashboard_configs. Sertakan migration SQL
+lengkap dan siap dijalankan di MariaDB."
+
+PROMPT 2:
+"Buat semua model GORM di models/ sesuai tabel di Bagian 1:
+user_profile.go, user_goal.go, recommendation.go, notification.go,
+notification_preference.go, user_dashboard_config.go.
+Untuk user_dashboard_config gunakan datatypes.JSON dari gorm.io/datatypes."
+
+PROMPT 3:
+"Buat utils/goal_progress.go yang berisi fungsi:
+- GetCurrentValue(db, userID, goalType) (float64, error)
+- CalcProgressPct(current, target float64) float64
+- EstimateAchieveDate(db, userID, goalType, target float64) (*time.Time, error)
+Sesuai logika di Bagian 3A."
+
+PROMPT 4:
+"Buat utils/recommendation_engine.go yang berisi fungsi
+GenerateRuleBasedRecommendations(db, userID) ([]Recommendation, error)
+dengan semua 6 rule sesuai Bagian 3B."
+
+PROMPT 5:
+"Buat utils/openrouter.go yang berisi fungsi
+RequestAIAnalysis(ctx, userID, contextData string) (string, error)
+sesuai spesifikasi Bagian 3C. Gunakan env OPENROUTER_API_KEY,
+OPENROUTER_MODEL_PRIMARY, OPENROUTER_MODEL_FALLBACK. Handle timeout 30 detik."
+
+PROMPT 6:
+"Buat scheduler/jobs/reminder_job.go (Job 1 & 2),
+scheduler/jobs/goal_check_job.go (Job 3),
+scheduler/jobs/cleanup_job.go (Job 4)
+sesuai logika Bagian 3D."
+
+PROMPT 7:
+"Buat scheduler/scheduler.go dengan fungsi Start(db *gorm.DB) yang
+menjalankan semua job dari Bagian 3D menggunakan goroutine + time.Ticker.
+Update main.go: tambahkan go scheduler.Start(db) setelah DB init."
+
+PROMPT 8:
+"Buat handlers/onboarding_handler.go dengan semua endpoint /onboarding/*
+sesuai Bagian 2."
+
+PROMPT 9:
+"Buat handlers/goal_handler.go dengan semua endpoint /goals/*
+sesuai Bagian 2. Gunakan utils/goal_progress.go untuk kalkulasi progress."
+
+PROMPT 10:
+"Buat handlers/recommendation_handler.go dengan semua endpoint
+/recommendations/* sesuai Bagian 2. Gunakan recommendation_engine.go
+dan openrouter.go. Implementasikan rate limit 24 jam untuk AI."
+
+PROMPT 11:
+"Buat handlers/notification_handler.go dan handlers/dashboard_config_handler.go
+dengan semua endpoint sesuai Bagian 2."
+
+PROMPT 12:
+"Update routes/routes.go: tambahkan semua route baru dari Bagian 2.
+Jangan ubah atau hapus route yang sudah ada."
+
+PROMPT 13:
+"Buat semua file API di frontend: src/api/onboardingApi.ts,
+goalApi.ts, recommendationApi.ts, notificationApi.ts,
+dashboardConfigApi.ts menggunakan axiosInstance yang sudah ada."
+
+PROMPT 14:
+"Buat src/store/notificationStore.ts menggunakan Zustand.
+State: notifications[], unread_count, isPolling.
+Action: fetchUnread(), markRead(id), startPolling(), stopPolling().
+Polling interval: 60 detik menggunakan setInterval."
+
+PROMPT 15:
+"Buat halaman src/pages/Onboarding.tsx sesuai spesifikasi Bagian 5.
+Multi-step wizard 5 langkah dengan progress bar, validasi Zod per step,
+tombol Back/Next/Skip."
+
+PROMPT 16:
+"Buat src/components/GoalProgressCard.tsx dan halaman src/pages/Goals.tsx
+sesuai spesifikasi Bagian 5."
+
+PROMPT 17:
+"Buat src/components/RecommendationCard.tsx dan halaman
+src/pages/Recommendations.tsx sesuai spesifikasi Bagian 5.
+Implementasikan cooldown timer UI untuk tombol AI."
+
+PROMPT 18:
+"Buat src/components/NotificationBell.tsx dengan polling via notificationStore,
+src/pages/Notifications.tsx, dan src/pages/NotificationPreferences.tsx
+sesuai spesifikasi Bagian 5."
+
+PROMPT 19:
+"Buat src/components/DashboardWidgetToggle.tsx,
+WidgetGoalProgress.tsx, WidgetRecommendation.tsx, WidgetRecoveryScore.tsx
+sesuai Bagian 4."
+
+PROMPT 20:
+"Update src/pages/Dashboard.tsx dan src/components/Navbar.tsx:
+- Tambahkan NotificationBell ke Navbar
+- Tambahkan tombol Atur Widget + DashboardWidgetToggle modal
+- Render widget secara kondisional berdasarkan GET /dashboard/config
+- Tambahkan WidgetGoalProgress dan WidgetRecommendation
+- Jangan ubah widget/konten yang sudah ada, hanya tambahkan"
+
+================================================================================
+END OF DOCUMENT — POWERLIFTING SAAS PERSONALISASI
+================================================================================

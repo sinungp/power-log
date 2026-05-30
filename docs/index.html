@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PowerLog Documentation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #0c0a09;
+      --bg-raised: #141210;
+      --bg-hovered: #1c1a18;
+      --border: #2a2724;
+      --text: #a8a29e;
+      --text-muted: #787572;
+      --champagne: #f5f0e8;
+      --gold: #c9a84c;
+      --gold-dim: #a88a30;
+      --gold-glow: rgba(201,168,76,0.08);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+    }
+    a { color: var(--gold); text-decoration: none; }
+    a:hover { color: var(--champagne); }
+    ::selection { background: var(--gold); color: var(--bg); }
+
+    .sidebar {
+      position: fixed; top: 0; left: 0; bottom: 0; width: 280px;
+      background: var(--bg-raised); border-right: 1px solid var(--border);
+      overflow-y: auto; padding: 32px 20px; z-index: 100;
+    }
+    .sidebar-logo { font-size: 1.2rem; font-weight: 700; color: var(--gold); letter-spacing: 0.05em; margin-bottom: 32px; display: block; }
+    .sidebar-nav { list-style: none; }
+    .sidebar-nav li { margin-bottom: 2px; }
+    .sidebar-nav a {
+      display: block; padding: 8px 12px; border-radius: 4px;
+      font-size: 0.88rem; color: var(--text); transition: all 0.15s;
+    }
+    .sidebar-nav a:hover, .sidebar-nav a.active {
+      background: var(--gold-glow); color: var(--gold);
+    }
+    .sidebar-nav .section-label {
+      font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.1em; color: var(--text-muted); padding: 16px 12px 6px;
+    }
+
+    .main { margin-left: 280px; padding: 0; max-width: 960px; }
+    .content { padding: 48px 64px 120px; }
+    .content h1 {
+      font-size: 2.4rem; font-weight: 300; color: var(--champagne);
+      margin-bottom: 8px; letter-spacing: -0.02em;
+    }
+    .content .subtitle { color: var(--text-muted); font-size: 1.05rem; margin-bottom: 48px; }
+    .content h2 {
+      font-size: 1.5rem; font-weight: 600; color: var(--champagne);
+      margin-top: 56px; margin-bottom: 16px; padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .content h3 {
+      font-size: 1.1rem; font-weight: 600; color: var(--champagne);
+      margin-top: 32px; margin-bottom: 8px;
+    }
+    .content p { margin-bottom: 16px; }
+    .content ul, .content ol { margin-bottom: 16px; padding-left: 20px; }
+    .content li { margin-bottom: 6px; }
+    .content code {
+      font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;
+      background: var(--bg-raised); padding: 2px 6px; border-radius: 3px;
+      border: 1px solid var(--border); color: var(--gold);
+    }
+    .content pre {
+      background: var(--bg-raised); border: 1px solid var(--border);
+      border-radius: 6px; padding: 16px 20px; overflow-x: auto;
+      margin-bottom: 16px; font-size: 0.85rem;
+    }
+    .content pre code { background: none; border: none; color: var(--text); padding: 0; }
+    .content blockquote {
+      border-left: 3px solid var(--gold); padding: 12px 20px;
+      background: var(--gold-glow); margin-bottom: 16px; border-radius: 0 4px 4px 0;
+    }
+    .content blockquote strong { color: var(--champagne); }
+    .feature-card {
+      background: var(--bg-raised); border: 1px solid var(--border);
+      border-radius: 8px; padding: 20px 24px; margin-bottom: 16px;
+      transition: border-color 0.2s;
+    }
+    .feature-card:hover { border-color: var(--gold); }
+    .feature-card h4 { color: var(--gold); font-size: 1rem; margin-bottom: 6px; }
+    .feature-card p { font-size: 0.92rem; margin-bottom: 0; color: var(--text-muted); }
+    .badge {
+      display: inline-block; font-size: 0.72rem; font-weight: 600;
+      padding: 2px 8px; border-radius: 3px; text-transform: uppercase;
+      letter-spacing: 0.05em; margin-left: 6px;
+    }
+    .badge-new { background: var(--gold); color: var(--bg); }
+    .badge-core { background: var(--bg-hovered); color: var(--text-muted); border: 1px solid var(--border); }
+    .table-wrap { overflow-x: auto; margin-bottom: 24px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+    th { color: var(--champagne); font-weight: 600; background: var(--bg-raised); }
+    td { color: var(--text); }
+    .hero-docs {
+      background: linear-gradient(135deg, var(--bg-raised) 0%, var(--bg) 100%);
+      padding: 48px 64px; border-bottom: 1px solid var(--border);
+    }
+    .hero-docs h1 { margin: 0; }
+    .hero-docs p { font-size: 1.1rem; color: var(--text-muted); max-width: 600px; }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; }
+      .content, .hero-docs { padding: 24px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <a href="/docs/" class="sidebar-logo">PowerLog Docs</a>
+  <ul class="sidebar-nav">
+    <li class="section-label">Getting Started</li>
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#onboarding">Onboarding Wizard</a></li>
+    <li><a href="#authentication">Authentication</a></li>
+
+    <li class="section-label">Core Features</li>
+    <li><a href="#dashboard">Dashboard</a></li>
+    <li><a href="#calculator">1RM Calculator</a></li>
+    <li><a href="#lifts">Lift Tracking</a></li>
+    <li><a href="#accessories">Exercise Library</a></li>
+    <li><a href="#checklist">Warmup & Cooldown</a></li>
+    <li><a href="#bodyweight">Body Weight</a></li>
+    <li><a href="#recovery">Recovery Logging</a></li>
+    <li><a href="#analytics">Analytics</a></li>
+
+    <li class="section-label">Personalization</li>
+    <li><a href="#goals">Goal Setting</a></li>
+    <li><a href="#recommendations">Recommendations</a></li>
+    <li><a href="#notifications">Notifications</a></li>
+    <li><a href="#widgets">Dashboard Widgets</a></li>
+
+    <li class="section-label">Technical</li>
+    <li><a href="#tech-stack">Tech Stack</a></li>
+    <li><a href="#api">API Reference</a></li>
+    <li><a href="#deployment">Deployment</a></li>
+  </ul>
+</aside>
+
+<div class="main">
+  <div class="hero-docs">
+    <h1>PowerLog Documentation</h1>
+    <p>Complete guide to every feature in the all-in-one powerlifting companion app.</p>
+  </div>
+
+  <div class="content">
+
+    <section id="overview">
+      <h2>Overview</h2>
+      <p>PowerLog is a full-stack powerlifting companion designed for lifters of all levels — from beginners tracking their first session to advanced competitors preparing for meets. The app combines essential lifting tools with intelligent personalization features to help you train smarter.</p>
+      <p>Built with <strong>Go + Fiber + GORM</strong> (backend), <strong>TypeScript + React + Zustand</strong> (frontend), and <strong>MariaDB</strong> (database), PowerLog runs entirely in Docker containers for easy deployment.</p>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Category</th><th>Count</th></tr>
+          <tr><td>Backend Handlers</td><td>12</td></tr>
+          <tr><td>Database Models</td><td>15+</td></tr>
+          <tr><td>API Endpoints</td><td>50+</td></tr>
+          <tr><td>Frontend Pages</td><td>15</td></tr>
+          <tr><td>Frontend Components</td><td>20+</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section id="onboarding">
+      <h2>Onboarding Wizard</h2>
+      <p class="feature-tag"><span class="badge badge-new">New</span> <span class="badge badge-core">Personalization</span></p>
+      <p>When a new user registers and logs in for the first time, they are guided through a 5-step onboarding wizard before accessing the main app. This ensures the app is tailored to their profile from day one.</p>
+      <h3>The 5 Steps</h3>
+      <ol>
+        <li><strong>Welcome</strong> — Brief introduction and goal selection (lose weight, build muscle, increase strength, competition prep, general fitness).</li>
+        <li><strong>Experience & Training</strong> — Select experience level (beginner / intermediate / advanced) and training frequency (2-6 days/week).</li>
+        <li><strong>Equipment & Focus</strong> — Choose available equipment (barbell, dumbbell, squat rack, cables, machines) and training focus areas.</li>
+        <li><strong>Goals & Preferences</strong> — Set initial SBD 1RM targets and training style preference (Push/Pull/Legs, Upper/Lower, Full Body, Custom).</li>
+        <li><strong>Complete</strong> — Summary of all selections with a "Start Training" button to enter the app.</li>
+      </ol>
+      <p>After completing onboarding, the user is redirected to the Dashboard. Onboarding data is stored in <code>user_profiles</code> and <code>startup_preferences</code> tables.</p>
+      <blockquote><strong>Tip:</strong> Users can revisit and update their preferences later from the profile/settings area. The onboarding status is tracked so it only shows once.</blockquote>
+    </section>
+
+    <section id="authentication">
+      <h2>Authentication</h2>
+      <p>PowerLog supports multiple authentication methods:</p>
+      <ul>
+        <li><strong>Email & Password</strong> — Standard registration and login with JWT tokens (default 72h expiry).</li>
+        <li><strong>Google OAuth2</strong> — Sign in with your Google account.</li>
+        <li><strong>Facebook OAuth2</strong> — Sign in with Facebook.</li>
+        <li><strong>Twitter OAuth2</strong> — Sign in with Twitter/X.</li>
+      </ul>
+      <p>OAuth providers are configured via environment variables. The frontend handles the OAuth callback flow and stores the JWT token in Zustand state.</p>
+    </section>
+
+    <!-- Core Features -->
+    <section id="dashboard">
+      <h2>Dashboard</h2>
+      <p>The Dashboard is the first screen users see after login. It provides a snapshot of key metrics and can be customized with widgets.</p>
+      <h3>Default Widgets</h3>
+      <ul>
+        <li><strong>Weekly Volume Chart</strong> — Total volume (weight × reps) over the last 7 days for SBD lifts.</li>
+        <li><strong>Latest PRs</strong> — Recent personal records for squat, bench, and deadlift.</li>
+        <li><strong>Recovery Score</strong> — Current recovery status based on recent sleep, stress, and DOMS logs.</li>
+        <li><strong>Daily Checklist</strong> — Quick overview of today's warmup/cooldown completion status.</li>
+        <li><strong>Goal Progress</strong> — Progress bars for active goals.</li>
+        <li><strong>Recommendations</strong> — Latest rule-based and AI recommendations.</li>
+      </ul>
+      <p>Widgets can be toggled on/off via the "Atur Widget" button on the Dashboard.</p>
+    </section>
+
+    <section id="calculator">
+      <h2>1RM Calculator</h2>
+      <p>Calculate your estimated one-rep max using three validated formulas:</p>
+      <ul>
+        <li><strong>Epley</strong> — <code>weight × (1 + reps / 30)</code> — Most common, good for all rep ranges.</li>
+        <li><strong>Brzycki</strong> — <code>weight × (36 / (37 - reps))</code> — Best accuracy for low reps (1-10).</li>
+        <li><strong>Lombardi</strong> — <code>weight × reps^0.10</code> — Tends to be more conservative.</li>
+      </ul>
+      <p>Enter weight, reps, and select a formula to instantly see your estimated 1RM. Results include the weight, percentage of 1RM, and recommended training zones.</p>
+    </section>
+
+    <section id="lifts">
+      <h2>Lift Tracking</h2>
+      <p>Log every squat, bench press, and deadlift session with detailed data:</p>
+      <ul>
+        <li><strong>Lift Type</strong> — Squat, Bench Press, or Deadlift.</li>
+        <li><strong>Weight & Reps</strong> — Sets with weight in kg and number of reps.</li>
+        <li><strong>RPE</strong> — Rate of Perceived Exertion (1-10) to gauge intensity.</li>
+        <li><strong>Notes</strong> — Optional notes about the session.</li>
+      </ul>
+      <p>All records are stored with timestamps and never deleted (soft delete via GORM). The lift history feeds into the Analytics, Recommendations, and Goal Progress features.</p>
+    </section>
+
+    <section id="accessories">
+      <h2>Exercise Library</h2>
+      <p>Discover accessory exercises tailored to your main lifts and experience level. Each exercise includes:</p>
+      <ul>
+        <li>Target muscle group and lift association (squat/bench/deadlift).</li>
+        <li>Difficulty rating and recommended sets/reps.</li>
+        <li>Exercise description and execution tips.</li>
+      </ul>
+      <p>Accessories are organized by which main lift they support, helping you build balanced accessory work around your SBD training.</p>
+    </section>
+
+    <section id="checklist">
+      <h2>Warmup & Cooldown Checklist</h2>
+      <p>Follow structured warmup and cooldown routines with an interactive checklist:</p>
+      <ul>
+        <li><strong>Warmup</strong> — Dynamic stretches, activation exercises, and ramp-up sets.</li>
+        <li><strong>Cooldown</strong> — Static stretches and mobility work to aid recovery.</li>
+      </ul>
+      <p>Each item can be checked off as completed. The checklist resets daily, and completion status is tracked in the Dashboard.</p>
+    </section>
+
+    <section id="bodyweight">
+      <h2>Body Weight Tracking</h2>
+      <p>Log your daily body weight to track changes over time. Features include:</p>
+      <ul>
+        <li>Simple weight input in kg.</li>
+        <li>History view with a weight trend chart.</li>
+        <li>Visual progress over weeks and months.</li>
+      </ul>
+      <p>Body weight data is used by the Recommendation Engine to provide context-aware suggestions.</p>
+    </section>
+
+    <section id="recovery">
+      <h2>Recovery Logging</h2>
+      <p class="feature-tag"><span class="badge badge-new">New</span> <span class="badge badge-core">Personalization</span></p>
+      <p>Track your daily recovery status across three key metrics:</p>
+      <ul>
+        <li><strong>Sleep Hours</strong> — Total hours slept (0-24).</li>
+        <li><strong>Sleep Quality</strong> — Self-rated quality on a scale of 1-10.</li>
+        <li><strong>Stress Level</strong> — Daily stress rating (1-10).</li>
+        <li><strong>DOMS Level</strong> — Delayed Onset Muscle Soreness rating (1-10).</li>
+      </ul>
+      <p>Each log produces a <strong>Recovery Score</strong> (0-100) calculated from the weighted combination of these metrics. Recovery trends over time are displayed in the Analytics page and used by the Recommendation Engine to detect when you need to deload.</p>
+      <blockquote><strong>Formula:</strong> Recovery Score = (Sleep Hours / 8 × 30) + (Sleep Quality × 2) + ((11 - Stress) × 2) + ((11 - DOMS) × 2). Max score is 100.</blockquote>
+    </section>
+
+    <section id="analytics">
+      <h2>Analytics</h2>
+      <p class="feature-tag"><span class="badge badge-core">Pro</span></p>
+      <p>Comprehensive analytics to visualize your training data:</p>
+      <ul>
+        <li><strong>Weekly Volume Chart</strong> — Bar chart showing total SBD volume per week.</li>
+        <li><strong>Intensity Zone Chart</strong> — Distribution of your training across intensity zones based on RPE.</li>
+        <li><strong>Recovery Summary Card</strong> — Average sleep, stress, and recovery score trend.</li>
+        <li><strong>Lift Ratio Card</strong> — Bench-to-squat and deadlift-to-squat ratios for weakness detection.</li>
+        <li><strong>Body Weight Chart</strong> — Weight trend over time.</li>
+      </ul>
+      <p>Analytics pulls data from lift records, recovery logs, and body weight entries to give a comprehensive view of your training health.</p>
+    </section>
+
+    <!-- Personalization Features -->
+    <section id="goals">
+      <h2>Goal Setting</h2>
+      <p class="feature-tag"><span class="badge badge-new">New</span> <span class="badge badge-core">Personalization</span></p>
+      <p>Set and track personal goals across multiple categories:</p>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Goal Type</th><th>Description</th></tr>
+          <tr><td><code>squat_1rm</code></td><td>Target squat 1RM</td></tr>
+          <tr><td><code>bench_1rm</code></td><td>Target bench press 1RM</td></tr>
+          <tr><td><code>deadlift_1rm</code></td><td>Target deadlift 1RM</td></tr>
+          <tr><td><code>body_weight</code></td><td>Target body weight</td></tr>
+          <tr><td><code>competition</code></td><td>Competition prep with name, date, and federation</td></tr>
+          <tr><td><code>other</code></td><td>Custom goal with optional notes</td></tr>
+        </tbody></table>
+      </div>
+      <h3>Features</h3>
+      <ul>
+        <li><strong>Create Goals</strong> — Set goal type, target value, optional target date, competition details, and notes.</li>
+        <li><strong>Auto Progress</strong> — Progress percentage calculated automatically from your latest lift records.</li>
+        <li><strong>Estimated Achievement Date</strong> — Based on your current progress rate, the app estimates when you'll reach your goal.</li>
+        <li><strong>Mark Achieved</strong> — Manually mark a goal as achieved (updates achieved_at timestamp).</li>
+        <li><strong>Scheduler Auto-Detect</strong> — The goal check job (00:05 daily) automatically detects achieved goals when current values meet or exceed targets.</li>
+      </ul>
+      <blockquote><strong>Pro Tip:</strong> Setting a competition goal triggers the Recommendation Engine to suggest peaking phase adjustments 4 weeks out.</blockquote>
+    </section>
+
+    <section id="recommendations">
+      <h2>Recommendations</h2>
+      <p class="feature-tag"><span class="badge badge-new">New</span> <span class="badge badge-core">Personalization</span></p>
+      <p>The Recommendation Engine provides intelligent, data-driven suggestions to optimize your training. It works on two levels:</p>
+
+      <h3>Rule-Based Recommendations</h3>
+      <p>Six built-in rules analyze your data and generate actionable insights. The engine runs deduplication — it won't repeat the same active recommendation.</p>
+      <div class="table-wrap">
+        <table>
+          <tr><th>#</th><th>Rule</th><th>Trigger</th><th>Action</th></tr>
+          <tr><td>1</td><td>Low Recovery</td><td>Avg recovery score &lt; 50 over 3 days</td><td>Suggests reducing volume 20-30%, prioritize sleep</td></tr>
+          <tr><td>2</td><td>Stagnant Volume</td><td>Volume not increased in 3 weeks with good recovery</td><td>Suggests adding sets or increasing weight</td></tr>
+          <tr><td>3</td><td>Lift Weakness</td><td>Bench/squat ratio &lt; 65% or deadlift/squat &lt; 110%</td><td>Identifies weak lift, suggests accessory focus</td></tr>
+          <tr><td>4</td><td>Competition Peaking</td><td>Competition goal within 28 days</td><td>Suggests peaking phase: reduce volume 40%, high intensity</td></tr>
+          <tr><td>5</td><td>Goal Near</td><td>Goal progress ≥ 90%</td><td>Motivational message with remaining progress</td></tr>
+          <tr><td>6</td><td>No Recovery Data</td><td>No recovery logs in 3 days</td><td>Reminds user to log recovery for accurate recommendations</td></tr>
+        </table>
+      </div>
+
+      <h3>AI-Powered Analysis</h3>
+      <p>Using <strong>OpenRouter</strong> (free-tier LLM: <code>meta-llama/llama-3.1-8b-instruct</code>), users can request a deep AI analysis of their training data.</p>
+      <ul>
+        <li><strong>Context window</strong> — 4-12 weeks of training data sent to the AI.</li>
+        <li><strong>Data included</strong> — Experience level, estimated 1RMs, weekly volume, recovery trends, lift ratios, active goals, and current rule-based recommendations.</li>
+        <li><strong>Rate limit</strong> — 1 request per 24 hours per user.</li>
+        <li><strong>Fallback model</strong> — If the primary model is unavailable, it falls back to <code>google/gemma-2-9b-it:free</code>.</li>
+      </ul>
+      <p>The AI returns 2-3 specific program recommendations for the upcoming week, tailored to your data.</p>
+      <blockquote><strong>Note:</strong> Requires <code>OPENROUTER_API_KEY</code> to be set in the environment. Without it, AI analysis returns a 502 error.</blockquote>
+    </section>
+
+    <section id="notifications">
+      <h2>Notifications & Reminders</h2>
+      <p class="feature-tag"><span class="badge badge-new">New</span> <span class="badge badge-core">Personalization</span></p>
+      <p>A comprehensive notification system keeps you on track with your training:</p>
+
+      <h3>Notification Types</h3>
+      <ul>
+        <li><strong>Reminder Recovery</strong> — Prompt to log today's recovery data.</li>
+        <li><strong>Reminder Lift</strong> — Reminder to log your training session.</li>
+        <li><strong>Goal Achieved</strong> — Alert when a goal is automatically detected as achieved.</li>
+        <li><strong>Goal Near</strong> — Encouragement when a goal is close to completion.</li>
+        <li><strong>Recommendation</strong> — Notification when new recommendations are generated.</li>
+      </ul>
+
+      <h3>Notification Preferences</h3>
+      <p>Each user can configure their notification preferences:</p>
+      <ul>
+        <li><strong>Reminder Recovery</strong> — Toggle on/off, set reminder time (HH:MM), and days of week.</li>
+        <li><strong>Reminder Lift</strong> — Toggle on/off, set reminder time, and days of week.</li>
+        <li><strong>Telegram Bot</strong> — Connect Telegram for push notifications (requires <code>TELEGRAM_BOT_TOKEN</code> env var).</li>
+      </ul>
+
+      <h3>Scheduler Jobs</h3>
+      <p>Three background jobs run in the backend (enabled via <code>SCHEDULER_ENABLED=true</code>):</p>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Job</th><th>Schedule</th><th>Function</th></tr>
+          <tr><td>Reminder Job</td><td>Every 60 minutes</td><td>Sends pending recovery and lift reminders based on user preferences and current time.</td></tr>
+          <tr><td>Goal Check</td><td>Daily at 00:05</td><td>Automatically marks goals as achieved when current values meet targets.</td></tr>
+          <tr><td>Cleanup</td><td>Daily at 03:00</td><td>Deletes expired recommendations and notifications older than 90 days.</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section id="widgets">
+      <h2>Dashboard Widgets</h2>
+      <p class="feature-tag"><span class="badge badge-new">New</span> <span class="badge badge-core">Personalization</span></p>
+      <p>Customize your Dashboard by toggling widgets on or off. Click "Atur Widget" to open the widget configuration modal.</p>
+      <h3>Available Widgets</h3>
+      <div class="feature-card"><h4>Goal Progress</h4><p>Shows progress bars for your active goals with percentages and remaining values. Requires active goals to display.</p></div>
+      <div class="feature-card"><h4>Recommendations</h4><p>Displays the latest rule-based recommendations. Shows a message if no recommendations are available.</p></div>
+      <div class="feature-card"><h4>Recovery Score</h4><p>Your current recovery score (0-100) based on the most recent recovery log. Greys out when no data is available.</p></div>
+      <p>Widget visibility is persisted per user in the <code>user_dashboard_configs</code> table as a JSON configuration.</p>
+    </section>
+
+    <!-- Technical -->
+    <section id="tech-stack">
+      <h2>Tech Stack</h2>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Layer</th><th>Technology</th></tr>
+          <tr><td>Backend</td><td>Go 1.24, Fiber v2, GORM, MySQL Driver</td></tr>
+          <tr><td>Frontend</td><td>TypeScript, React 19, Vite, Zustand, React Router, Recharts</td></tr>
+          <tr><td>Database</td><td>MariaDB 10.11</td></tr>
+          <tr><td>Auth</td><td>JWT (golang-jwt), OAuth2 (Google, Facebook, Twitter)</td></tr>
+          <tr><td>AI</td><td>OpenRouter API (LLaMA 3.1, Gemma 2)</td></tr>
+          <tr><td>Container</td><td>Docker, Docker Compose</td></tr>
+          <tr><td>Proxy</td><td>Nginx (frontend → API reverse proxy)</td></tr>
+          <tr><td>Telemetry</td><td>Telegram Bot (optional)</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section id="api">
+      <h2>API Reference</h2>
+      <p>The backend exposes a RESTful JSON API at <code>/api/v1/</code>. All endpoints follow the response format: <code>{ success: bool, message: string, data: any }</code>.</p>
+      <p>Protected endpoints require a Bearer token in the <code>Authorization</code> header obtained from login/register.</p>
+
+      <h3>Authentication</h3>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Method</th><th>Path</th><th>Auth</th><th>Description</th></tr>
+          <tr><td>POST</td><td><code>/api/v1/register</code></td><td>No</td><td>Register new user</td></tr>
+          <tr><td>POST</td><td><code>/api/v1/login</code></td><td>No</td><td>Login with email/password</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/auth/:provider</code></td><td>No</td><td>OAuth2 redirect (google/facebook/twitter)</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/auth/:provider/callback</code></td><td>No</td><td>OAuth2 callback handler</td></tr>
+        </table>
+      </div>
+
+      <h3>Lift Records</h3>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+          <tr><td>GET</td><td><code>/api/v1/lifts</code></td><td>List lift records (paginated)</td></tr>
+          <tr><td>POST</td><td><code>/api/v1/lifts</code></td><td>Create lift record</td></tr>
+          <tr><td>PUT</td><td><code>/api/v1/lifts/:id</code></td><td>Update lift record</td></tr>
+          <tr><td>DELETE</td><td><code>/api/v1/lifts/:id</code></td><td>Soft-delete lift record</td></tr>
+        </table>
+      </div>
+
+      <h3>Recovery Logs</h3>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+          <tr><td>GET</td><td><code>/api/v1/recovery</code></td><td>List recovery logs</td></tr>
+          <tr><td>POST</td><td><code>/api/v1/recovery</code></td><td>Create recovery log</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/recovery/score</code></td><td>Get current recovery score</td></tr>
+        </table>
+      </div>
+
+      <h3>Goals (Personalization)</h3>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+          <tr><td>GET</td><td><code>/api/v1/goals</code></td><td>List user goals</td></tr>
+          <tr><td>POST</td><td><code>/api/v1/goals</code></td><td>Create goal</td></tr>
+          <tr><td>PUT</td><td><code>/api/v1/goals/:id</code></td><td>Update goal</td></tr>
+          <tr><td>DELETE</td><td><code>/api/v1/goals/:id</code></td><td>Delete goal</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/goals/:id/progress</code></td><td>Get goal progress + estimated date</td></tr>
+          <tr><td>POST</td><td><code>/api/v1/goals/:id/achieve</code></td><td>Mark goal as achieved</td></tr>
+        </table>
+      </div>
+
+      <h3>Recommendations (Personalization)</h3>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+          <tr><td>GET</td><td><code>/api/v1/recommendations</code></td><td>List active recommendations</td></tr>
+          <tr><td>POST</td><td><code>/api/v1/recommendations/generate</code></td><td>Run rule-based recommendation engine</td></tr>
+          <tr><td>POST</td><td><code>/api/v1/recommendations/ai-analysis</code></td><td>Request AI-powered analysis (1x/24h)</td></tr>
+          <tr><td>PUT</td><td><code>/api/v1/recommendations/:id/read</code></td><td>Mark recommendation as read</td></tr>
+        </table>
+      </div>
+
+      <h3>Notifications (Personalization)</h3>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+          <tr><td>GET</td><td><code>/api/v1/notifications</code></td><td>List notifications (paginated)</td></tr>
+          <tr><td>PUT</td><td><code>/api/v1/notifications/:id/read</code></td><td>Mark notification as read</td></tr>
+          <tr><td>PUT</td><td><code>/api/v1/notifications/read-all</code></td><td>Mark all as read</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/notifications/preferences</code></td><td>Get notification preferences</td></tr>
+          <tr><td>PUT</td><td><code>/api/v1/notifications/preferences</code></td><td>Update notification preferences</td></tr>
+        </table>
+      </div>
+
+      <h3>Dashboard Config (Personalization)</h3>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+          <tr><td>GET</td><td><code>/api/v1/dashboard/config</code></td><td>Get widget configuration</td></tr>
+          <tr><td>PUT</td><td><code>/api/v1/dashboard/config</code></td><td>Update widget visibility</td></tr>
+        </table>
+      </div>
+
+      <h3>Onboarding (Personalization)</h3>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Method</th><th>Path</th><th>Description</th></tr>
+          <tr><td>GET</td><td><code>/api/v1/onboarding/status</code></td><td>Check if onboarding is complete</td></tr>
+          <tr><td>GET</td><td><code>/api/v1/onboarding/profile</code></td><td>Get user profile data</td></tr>
+          <tr><td>PUT</td><td><code>/api/v1/onboarding/profile</code></td><td>Update profile data</td></tr>
+          <tr><td>PUT</td><td><code>/api/v1/onboarding/preferences</code></td><td>Update training preferences</td></tr>
+          <tr><td>PUT</td><td><code>/api/v1/onboarding/complete</code></td><td>Mark onboarding as finished</td></tr>
+        </table>
+      </div>
+    </section>
+
+    <section id="deployment">
+      <h2>Deployment</h2>
+      <p>The entire application runs in Docker containers defined in <code>docker-compose.yml</code>.</p>
+      <h3>Services</h3>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Service</th><th>Port</th><th>Description</th></tr>
+          <tr><td>db</td><td>3307</td><td>MariaDB 10.11 database</td></tr>
+          <tr><td>backend</td><td>8080</td><td>Go + Fiber API server</td></tr>
+          <tr><td>frontend</td><td>80</td><td>React SPA served by Nginx (proxies /api/ to backend)</td></tr>
+          <tr><td>docs</td><td>8081</td><td>Documentation site served by Nginx</td></tr>
+        </table>
+      </div>
+      <h3>Quick Start</h3>
+      <pre><code># Clone and start
+git clone &lt;repo-url&gt; powerlog
+cd powerlog
+
+# Configure environment
+# Copy example envs and set your keys (OAuth, OpenRouter, Telegram)
+
+# Start all services
+docker compose up -d --build
+
+# Access the app
+# Frontend: http://localhost
+# Docs:     http://localhost:8081
+# API:      http://localhost:8080/api/v1</code></pre>
+      <h3>Environment Variables</h3>
+      <p>Key environment variables that can be configured:</p>
+      <div class="table-wrap">
+        <table>
+          <tr><th>Variable</th><th>Required</th><th>Default</th><th>Description</th></tr>
+          <tr><td><code>JWT_SECRET</code></td><td>Yes</td><td>—</td><td>Secret key for JWT token signing</td></tr>
+          <tr><td><code>JWT_EXPIRE_HOURS</code></td><td>No</td><td>72</td><td>JWT token expiry in hours</td></tr>
+          <tr><td><code>GOOGLE_CLIENT_ID</code></td><td>OAuth</td><td>—</td><td>Google OAuth2 client ID</td></tr>
+          <tr><td><code>FACEBOOK_CLIENT_ID</code></td><td>OAuth</td><td>—</td><td>Facebook OAuth2 client ID</td></tr>
+          <tr><td><code>TWITTER_CLIENT_ID</code></td><td>OAuth</td><td>—</td><td>Twitter OAuth2 client ID</td></tr>
+          <tr><td><code>OPENROUTER_API_KEY</code></td><td>AI Features</td><td>—</td><td>API key for AI recommendations</td></tr>
+          <tr><td><code>TELEGRAM_BOT_TOKEN</code></td><td>No</td><td>—</td><td>Telegram bot token for push notifications</td></tr>
+          <tr><td><code>SCHEDULER_ENABLED</code></td><td>No</td><td>false</td><td>Enable background reminder/cleanup jobs</td></tr>
+        </table>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.sidebar-nav a[href^="#"]').forEach(link => {
+    link.addEventListener('click', e => {
+      document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+      link.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

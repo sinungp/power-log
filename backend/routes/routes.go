@@ -69,4 +69,40 @@ func Setup(app *fiber.App) {
 
 	// Wilks calculator (public)
 	api.Post("/calculator/wilks", handlers.CalculateWilksScore)
+
+	// Onboarding (protected)
+	onboarding := api.Group("/onboarding", middleware.Protected())
+	onboarding.Get("/status", handlers.GetOnboardingStatus)
+	onboarding.Post("/profile", handlers.SaveOnboardingProfile)
+	onboarding.Post("/training-preference", handlers.SaveOnboardingTrainingPreference)
+	onboarding.Post("/complete", handlers.CompleteOnboarding)
+
+	// Goals (protected)
+	goals := api.Group("/goals", middleware.Protected())
+	goals.Get("/", handlers.GetGoals)
+	goals.Post("/", handlers.CreateGoal)
+	goals.Put("/:id", handlers.UpdateGoal)
+	goals.Delete("/:id", handlers.DeleteGoal)
+	goals.Get("/progress", handlers.GetGoalProgress)
+	goals.Post("/:id/achieve", handlers.AchieveGoal)
+
+	// Recommendations (protected)
+	recs := api.Group("/recommendations", middleware.Protected())
+	recs.Get("/", handlers.GetRecommendations)
+	recs.Post("/generate", handlers.GenerateRecommendations)
+	recs.Post("/ai-analysis", handlers.RequestAIAnalysis)
+	recs.Put("/:id/read", handlers.MarkRecommendationRead)
+
+	// Notifications (protected)
+	notif := api.Group("/notifications", middleware.Protected())
+	notif.Get("/", handlers.GetNotifications)
+	notif.Put("/:id/read", handlers.MarkNotificationRead)
+	notif.Put("/read-all", handlers.MarkAllNotificationsRead)
+	notif.Get("/preferences", handlers.GetNotificationPreferences)
+	notif.Put("/preferences", handlers.UpdateNotificationPreferences)
+
+	// Dashboard config (protected)
+	dash := api.Group("/dashboard", middleware.Protected())
+	dash.Get("/config", handlers.GetDashboardConfig)
+	dash.Put("/config", handlers.UpdateDashboardConfig)
 }

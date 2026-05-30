@@ -13,6 +13,11 @@ import ChecklistPage from './pages/Checklist'
 import BodyWeightPage from './pages/BodyWeight'
 import RecoveryPage from './pages/Recovery'
 import AnalyticsPage from './pages/Analytics'
+import OnboardingPage from './pages/Onboarding'
+import GoalsPage from './pages/Goals'
+import RecommendationsPage from './pages/Recommendations'
+import NotificationsPage from './pages/Notifications'
+import NotificationPreferencesPage from './pages/NotificationPreferences'
 import ProtectedRoute from './components/ProtectedRoute'
 
 export default function App() {
@@ -25,6 +30,9 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/oauth/callback" element={<OAuthCallback />} />
+        <Route path="/onboarding" element={<ProtectedRoute />}>
+          <Route index element={<OnboardingPage />} />
+        </Route>
         <Route path="/app" element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>
             <Route path="dashboard" element={<Dashboard />} />
@@ -35,6 +43,10 @@ export default function App() {
             <Route path="body-weight" element={<BodyWeightPage />} />
             <Route path="recovery" element={<RecoveryPage />} />
             <Route path="analytics" element={<AnalyticsPage />} />
+            <Route path="goals" element={<GoalsPage />} />
+            <Route path="recommendations" element={<RecommendationsPage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="notification-preferences" element={<NotificationPreferencesPage />} />
           </Route>
         </Route>
       </Routes>

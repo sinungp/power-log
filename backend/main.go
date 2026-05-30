@@ -8,6 +8,7 @@ import (
 	"github.com/sinun/powerlog-backend/config"
 	"github.com/sinun/powerlog-backend/database"
 	"github.com/sinun/powerlog-backend/routes"
+	"github.com/sinun/powerlog-backend/scheduler"
 )
 
 func main() {
@@ -28,6 +29,8 @@ func main() {
 	}))
 
 	routes.Setup(app)
+
+	go scheduler.Start(database.DB)
 
 	log.Fatal(app.Listen(":" + cfg.AppPort))
 }

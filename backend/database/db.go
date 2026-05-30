@@ -30,6 +30,12 @@ func Init(cfg *config.Config) error {
 		&models.UserChecklistLog{},
 		&models.BodyWeightLog{},
 		&models.RecoveryLog{},
+		&models.UserProfile{},
+		&models.UserGoal{},
+		&models.Recommendation{},
+		&models.Notification{},
+		&models.NotificationPreference{},
+		&models.UserDashboardConfig{},
 	); err != nil {
 		return err
 	}

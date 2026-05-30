@@ -8,18 +8,28 @@ const steps = [
   },
   {
     step: '02',
-    title: 'Log Your Lifts',
-    desc: 'Record your squat, bench, and deadlift sessions with weight, reps, and RPE.',
+    title: 'Onboarding Wizard',
+    desc: 'Set your experience level, goals, and preferences in a quick 5-step setup.',
   },
   {
     step: '03',
-    title: 'Track Progress',
-    desc: 'Monitor your PRs, analyze trends, and see your improvement over time.',
+    title: 'Log Your Lifts',
+    desc: 'Record squat, bench, and deadlift sessions with weight, reps, and RPE.',
   },
   {
     step: '04',
-    title: 'Optimize Training',
-    desc: 'Use 1RM calculator, accessory recommendations, and checklists to level up.',
+    title: 'Track Recovery',
+    desc: 'Log daily sleep, stress, and DOMS. Get a recovery score and smart deload alerts.',
+  },
+  {
+    step: '05',
+    title: 'Set Goals',
+    desc: 'Create SBD 1RM targets or competition goals with auto progress tracking.',
+  },
+  {
+    step: '06',
+    title: 'Get Recommendations',
+    desc: 'Receive rule-based insights and AI-powered training advice tailored to you.',
   },
 ]
 
@@ -35,7 +45,7 @@ export default function HowItWorksSection() {
         <p className={`text-muted text-center mb-12 max-w-xl mx-auto transition-all duration-700 delay-100 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
           Get started in just a few simple steps.
         </p>
-        <div className="grid md:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-3 gap-6">
           {steps.map((s, i) => (
             <div
               key={s.step}

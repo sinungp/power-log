@@ -37,6 +37,12 @@ services:
       FACEBOOK_CLIENT_SECRET: "${FACEBOOK_CLIENT_SECRET}"
       TWITTER_CLIENT_ID: "${TWITTER_CLIENT_ID}"
       TWITTER_CLIENT_SECRET: "${TWITTER_CLIENT_SECRET}"
+      OPENROUTER_API_KEY: "${OPENROUTER_API_KEY}"
+      OPENROUTER_BASE_URL: "https://openrouter.ai/api/v1"
+      OPENROUTER_MODEL_PRIMARY: "meta-llama/llama-3.1-8b-instruct:free"
+      OPENROUTER_MODEL_FALLBACK: "google/gemma-2-9b-it:free"
+      TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN}"
+      SCHEDULER_ENABLED: "false"
     ports:
       - "8080:8080"
     depends_on:
@@ -50,6 +56,13 @@ services:
       - "80:80"
     depends_on:
       - backend
+
+  docs:
+    build: ./docs
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    depends_on: []
 
 volumes:
   mariadb_data:

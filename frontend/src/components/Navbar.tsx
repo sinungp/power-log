@@ -2,11 +2,14 @@ import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useThemeStore } from '../store/themeStore'
+import NotificationBell from './NotificationBell'
 
 const navLinks = [
   { to: '/app/dashboard', label: 'Dashboard' },
   { to: '/app/analytics', label: 'Analytics' },
   { to: '/app/lifts', label: 'Lifts' },
+  { to: '/app/goals', label: 'Goals' },
+  { to: '/app/recommendations', label: 'Rekom' },
   { to: '/app/body-weight', label: 'Weight' },
   { to: '/app/recovery', label: 'Recovery' },
   { to: '/app/calculator', label: 'Calc' },
@@ -51,6 +54,7 @@ export default function Navbar() {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <NotificationBell />
             <button
               onClick={toggle}
               className="w-8 h-8 flex items-center justify-center text-muted hover:text-gold border border-hairline hover:border-gold"

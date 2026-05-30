@@ -14,6 +14,14 @@ export default function HeroSection() {
             PowerLog
           </Link>
           <div className="flex items-center gap-4">
+            <a
+              href="http://localhost:8081/docs/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-muted hover:text-gold text-sm transition-colors"
+            >
+              Docs
+            </a>
             <button
               onClick={toggle}
               className="w-8 h-8 flex items-center justify-center text-muted hover:text-gold border border-hairline hover:border-gold"
@@ -62,8 +70,8 @@ export default function HeroSection() {
           Track Your Powerlifting<br />Journey
         </h1>
         <p className="text-xl md:text-2xl text-muted mb-10 max-w-2xl mx-auto leading-relaxed animate-fade-in-up animate-delay-100">
-          The all-in-one app for powerlifters. Calculate your 1RM, track SBD lifts,
-          discover accessories, and optimize your warmup.
+          The all-in-one app for powerlifters. Track SBD lifts, calculate 1RM,
+          set goals, get AI recommendations, monitor recovery, and more.
         </p>
 
         {/* Barbell SVG */}

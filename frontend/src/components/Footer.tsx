@@ -14,11 +14,18 @@ export default function Footer() {
               <li>Lift Tracking</li>
               <li>Exercise Library</li>
               <li>Warmup &amp; Cooldown</li>
+              <li>Recovery Logging</li>
+              <li>Goal Setting</li>
+              <li>AI Recommendations</li>
+              <li>Notifications</li>
             </ul>
           </div>
           <div>
-            <h4 className="text-champagne font-semibold mb-3">Pricing</h4>
+            <h4 className="text-champagne font-semibold mb-3">Resources</h4>
             <ul className="space-y-2 text-sm">
+              <li><a href="http://localhost:8081/docs/" className="text-muted hover:text-gold transition-colors">Documentation</a></li>
+              <li><a href="http://localhost:8081/docs/#api" className="text-muted hover:text-gold transition-colors">API Reference</a></li>
+              <li><a href="http://localhost:8081/docs/#deployment" className="text-muted hover:text-gold transition-colors">Deployment Guide</a></li>
               <li>Free Plan</li>
               <li>Pro Plan</li>
             </ul>
