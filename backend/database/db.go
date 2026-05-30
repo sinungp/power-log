@@ -22,11 +22,17 @@ func Init(cfg *config.Config) error {
 		return err
 	}
 
-	return DB.AutoMigrate(
+	if err := DB.AutoMigrate(
 		&models.User{},
 		&models.LiftRecord{},
 		&models.Accessory{},
 		&models.Checklist{},
 		&models.UserChecklistLog{},
-	)
+	); err != nil {
+		return err
+	}
+
+	DB.Exec("ALTER TABLE users MODIFY password varchar(255) NULL;")
+
+	return nil
 }

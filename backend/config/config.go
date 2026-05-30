@@ -15,6 +15,9 @@ type Config struct {
 	DBName         string
 	JWTSecret      string
 	JWTExpireHours string
+
+	AppURL string
+	FrontendURL string
 }
 
 func Load() *Config {
@@ -29,6 +32,9 @@ func Load() *Config {
 		DBName:         getEnv("DB_NAME", "powerlog_db"),
 		JWTSecret:      getEnv("JWT_SECRET", "ganti_dengan_random_string_panjang"),
 		JWTExpireHours: getEnv("JWT_EXPIRE_HOURS", "72"),
+
+		AppURL:      getEnv("APP_URL", "http://localhost:8080"),
+		FrontendURL: getEnv("FRONTEND_URL", "http://localhost"),
 	}
 }
 

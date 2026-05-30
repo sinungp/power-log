@@ -4,6 +4,7 @@ import AppLayout from './layouts/AppLayout'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import OAuthCallback from './pages/OAuthCallback'
 import Dashboard from './pages/Dashboard'
 import Calculator from './pages/Calculator'
 import LiftRecord from './pages/LiftRecord'
@@ -20,6 +21,7 @@ export default function App() {
         </Route>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/oauth/callback" element={<OAuthCallback />} />
         <Route path="/app" element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>
             <Route path="dashboard" element={<Dashboard />} />

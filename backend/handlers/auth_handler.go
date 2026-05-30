@@ -26,6 +26,24 @@ type LoginInput struct {
 	Password string `json:"password" validate:"required"`
 }
 
+func jwtSecret() string {
+	if s := os.Getenv("JWT_SECRET"); s != "" {
+		return s
+	}
+	return "ganti_dengan_random_string_panjang"
+}
+
+func generateUserToken(user *models.User) (string, error) {
+	expireHours := 72
+	claims := jwt.MapClaims{
+		"user_id": user.ID,
+		"email":   user.Email,
+		"exp":     time.Now().Add(time.Duration(expireHours) * time.Hour).Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(jwtSecret()))
+}
+
 func Register(c *fiber.Ctx) error {
 	var input RegisterInput
 	if err := c.BodyParser(&input); err != nil {
@@ -46,10 +64,11 @@ func Register(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, 500, "Failed to hash password")
 	}
 
+	pw := string(hashedPassword)
 	user := models.User{
 		Name:     input.Name,
 		Email:    input.Email,
-		Password: string(hashedPassword),
+		Password: &pw,
 	}
 
 	if result := database.DB.Create(&user); result.Error != nil {
@@ -79,24 +98,16 @@ func Login(c *fiber.Ctx) error {
 		return utils.ErrorResponse(c, 401, "Invalid email or password")
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
+	// OAuth-only user (no password set)
+	if user.Password == nil {
+		return utils.ErrorResponse(c, 401, "This account uses social login. Please sign in with Google, Facebook, or X.")
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(*user.Password), []byte(input.Password)); err != nil {
 		return utils.ErrorResponse(c, 401, "Invalid email or password")
 	}
 
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		secret = "ganti_dengan_random_string_panjang"
-	}
-
-	expireHours := 72
-	claims := jwt.MapClaims{
-		"user_id": user.ID,
-		"email":   user.Email,
-		"exp":     time.Now().Add(time.Duration(expireHours) * time.Hour).Unix(),
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte(secret))
+	tokenString, err := generateUserToken(&user)
 	if err != nil {
 		return utils.ErrorResponse(c, 500, "Failed to generate token")
 	}

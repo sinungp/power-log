@@ -7,6 +7,9 @@ import (
 )
 
 func Setup(app *fiber.App) {
+	// Initialize OAuth providers
+	handlers.InitOAuth()
+
 	api := app.Group("/api/v1")
 
 	// Auth (public)
@@ -37,4 +40,8 @@ func Setup(app *fiber.App) {
 	checklistLogs := api.Group("/checklists/log", middleware.Protected())
 	checklistLogs.Post("/", handlers.CreateChecklistLog)
 	checklistLogs.Get("/", handlers.GetChecklistLogs)
+
+	// OAuth routes (outside /api/v1, web redirect flow)
+	app.Get("/oauth/:provider/login", handlers.OAuthLogin)
+	app.Get("/oauth/:provider/callback", handlers.OAuthCallback)
 }

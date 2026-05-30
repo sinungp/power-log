@@ -6,6 +6,8 @@ import { z } from 'zod'
 import axiosInstance from '../api/axiosInstance'
 import type { ApiResponse, AuthResponse } from '../types'
 
+const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+
 const schema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email'),
@@ -13,6 +15,12 @@ const schema = z.object({
 })
 
 type FormData = z.infer<typeof schema>
+
+const oauthProviders = [
+  { id: 'google', label: 'Google', icon: 'G' },
+  { id: 'facebook', label: 'Facebook', icon: 'f' },
+  { id: 'x', label: 'X', icon: 'X' },
+] as const
 
 export default function Register() {
   const [error, setError] = useState('')
@@ -45,6 +53,31 @@ export default function Register() {
           <h1 className="text-2xl font-light text-champagne mt-4">Create Account</h1>
           <p className="text-muted">Start your powerlifting journey</p>
         </div>
+
+        <div className="flex flex-col gap-2 mb-4">
+          {oauthProviders.map((p) => (
+            <a
+              key={p.id}
+              href={`${API}/oauth/${p.id}/login`}
+              className="flex items-center justify-center gap-3 bg-raised border border-hairline text-body py-2.5 rounded-sm hover:bg-hovered hover:border-gold/30 text-sm"
+            >
+              <span className="w-6 h-6 flex items-center justify-center font-bold text-xs border border-hairline text-muted">
+                {p.icon}
+              </span>
+              Continue with {p.label}
+            </a>
+          ))}
+        </div>
+
+        <div className="relative mb-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-hairline" />
+          </div>
+          <div className="relative flex justify-center text-xs">
+            <span className="bg-lacquer px-3 text-muted">or register with email</span>
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit(onSubmit)} className="bg-raised p-8 border border-hairline space-y-4">
           {error && (
             <div className="bg-danger/10 text-danger p-3 text-sm">{error}</div>

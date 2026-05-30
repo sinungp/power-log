@@ -29,6 +29,14 @@ services:
       DB_NAME: powerlog_db
       JWT_SECRET: ganti_dengan_random_string_panjang_di_production
       JWT_EXPIRE_HOURS: "72"
+      APP_URL: "http://localhost:8080"
+      FRONTEND_URL: "http://localhost"
+      GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID}"
+      GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET}"
+      FACEBOOK_CLIENT_ID: "${FACEBOOK_CLIENT_ID}"
+      FACEBOOK_CLIENT_SECRET: "${FACEBOOK_CLIENT_SECRET}"
+      TWITTER_CLIENT_ID: "${TWITTER_CLIENT_ID}"
+      TWITTER_CLIENT_SECRET: "${TWITTER_CLIENT_SECRET}"
     ports:
       - "8080:8080"
     depends_on:
