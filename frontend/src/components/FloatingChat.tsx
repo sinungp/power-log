@@ -133,7 +133,7 @@ export default function FloatingChat({ mode, onSend, placeholder, title }: Props
             {messages.map((m, i) => (
               <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div
-                  className={`max-w-[85%] px-3 py-2 text-sm leading-relaxed ${
+                  className={`max-w-[85%] px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap ${
                     m.role === 'user'
                       ? 'bg-gold text-lacquer rounded-lg rounded-br-sm'
                       : 'bg-lacquer text-body border border-hairline rounded-lg rounded-bl-sm'

@@ -14,6 +14,7 @@ import (
 type OpenRouterRequest struct {
 	Model    string              `json:"model"`
 	Messages []OpenRouterMessage `json:"messages"`
+	Stream   bool                `json:"stream"`
 }
 
 type OpenRouterMessage struct {
@@ -73,6 +74,7 @@ func callOpenRouterAPI(baseURL, apiKey, model, systemPrompt, userContent string)
 			{Role: "system", Content: systemPrompt},
 			{Role: "user", Content: userContent},
 		},
+		Stream: false,
 	}
 
 	jsonBody, err := json.Marshal(body)
@@ -88,7 +90,7 @@ func callOpenRouterAPI(baseURL, apiKey, model, systemPrompt, userContent string)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+apiKey)
 
-	client := &http.Client{Timeout: 30 * time.Second}
+	client := &http.Client{Timeout: 60 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
@@ -100,9 +102,31 @@ func callOpenRouterAPI(baseURL, apiKey, model, systemPrompt, userContent string)
 		return "", err
 	}
 
+	bodyStr := string(respBody)
+
+	// Clean up OpenRouter/SSE formatting if present
+	lines := strings.Split(bodyStr, "\n")
+	var jsonParts []string
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || line == "data: [DONE]" {
+			continue
+		}
+		if strings.HasPrefix(line, "data: ") {
+			jsonParts = append(jsonParts, strings.TrimPrefix(line, "data: "))
+		} else if strings.HasPrefix(line, "{") {
+			jsonParts = append(jsonParts, line)
+		}
+	}
+
+	if len(jsonParts) > 0 {
+		bodyStr = jsonParts[0] // Take first valid JSON object
+	}
+	bodyStr = strings.TrimSpace(bodyStr)
+
 	var result OpenRouterResponse
-	if err := json.Unmarshal(respBody, &result); err != nil {
-		return "", err
+	if err := json.Unmarshal([]byte(bodyStr), &result); err != nil {
+		return "", fmt.Errorf("JSON parse error: %v | Body: %s", err, bodyStr)
 	}
 
 	if result.Error != nil {

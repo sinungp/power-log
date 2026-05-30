@@ -50,12 +50,17 @@ func PublicChat(c *fiber.Ctx) error {
 	}
 
 	systemPrompt := `Kamu adalah asisten virtual PowerLog, aplikasi powerlifting all-in-one. 
-Jelaskan fitur-fitur PowerLog dengan ramah dan informatif dalam Bahasa Indonesia.
+Berikan penjelasan yang rapi, terstruktur, dan mudah dibaca dalam Bahasa Indonesia.
+Gunakan format berikut:
+- Gunakan bullet points (-) untuk daftar fitur.
+- Gunakan cetak tebal (**) untuk poin penting.
+- Berikan spasi antar paragraf.
+
 Fitur utama: 1RM Calculator, Lift Tracking (SBD), Exercise Library, Warmup & Cooldown Checklist, 
 Body Weight Tracking, Recovery Logging (sleep/stress/DOMS), Analytics & Charts, 
 Goal Setting (SBD/competition/body weight), AI Recommendations (rule-based + AI analysis),
 Notifications & Reminders (Telegram), Customizable Dashboard Widgets, Onboarding Wizard, OAuth2 Login.
-Jawab singkat (max 150 kata) dan ajak mereka mencoba aplikasi.`
+Jawab singkat (max 180 kata) dan ajak mereka mencoba aplikasi.`
 
 	apiKey := os.Getenv("OPENROUTER_API_KEY")
 	if apiKey == "" {
@@ -66,6 +71,7 @@ Jawab singkat (max 150 kata) dan ajak mereka mencoba aplikasi.`
 
 	reply, err := utils.CallOpenRouter(apiKey, systemPrompt, input.Message)
 	if err != nil {
+		fmt.Printf("Chat error: %v\n", err)
 		return utils.ErrorResponse(c, 502, "AI chat sedang tidak tersedia, coba lagi nanti")
 	}
 
@@ -104,6 +110,8 @@ Jawab maksimal 200 kata. Fokus pada rekomendasi actionable, bukan motivasi umum.
 
 	reply, err := utils.CallOpenRouter(apiKey, systemPrompt, input.Message)
 	if err != nil {
+		fmt.Printf("Chat error: %v\n", err)
+		fmt.Printf("Dashboard chat error: %v\n", err)
 		return utils.ErrorResponse(c, 502, "AI chat sedang tidak tersedia, coba lagi nanti")
 	}
 
