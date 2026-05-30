@@ -1,1 +1,53 @@
 @import "tailwindcss";
+
+@theme {
+  --color-lacquer: oklch(7% 0.004 95);
+  --color-raised: oklch(11% 0.005 95);
+  --color-hovered: oklch(14% 0.005 95);
+  --color-gold: oklch(84% 0.19 80.46);
+  --color-gold-dim: oklch(74% 0.19 80.46);
+  --color-patina: oklch(70% 0.12 188);
+  --color-champagne: oklch(91% 0 0);
+  --color-body: oklch(88% 0 0);
+  --color-muted: oklch(45% 0.005 95);
+  --color-hairline: oklch(20% 0.005 95);
+  --color-danger: oklch(55% 0.2 22);
+  --font-display: "Alumni Sans Pinstripe", serif;
+  --font-body: "Albert Sans", system-ui, sans-serif;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-hairline);
+  }
+
+  body {
+    background-color: var(--color-lacquer);
+    color: var(--color-body);
+    font-family: var(--font-body);
+    line-height: 1.8;
+  }
+
+  h1 {
+    color: var(--color-champagne);
+    font-weight: 300;
+  }
+
+  h2 {
+    color: var(--color-champagne);
+    font-weight: 600;
+  }
+
+  a,
+  button,
+  input,
+  select,
+  textarea {
+    transition: all 0.25s ease;
+  }
+
+  ::selection {
+    background-color: var(--color-gold);
+    color: var(--color-lacquer);
+  }
+}

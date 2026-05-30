@@ -38,57 +38,57 @@ export default function Register() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-lacquer px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link to="/" className="text-2xl font-bold text-blue-600">PowerLog</Link>
-          <h1 className="text-2xl font-bold mt-4">Create Account</h1>
-          <p className="text-gray-500">Start your powerlifting journey</p>
+          <Link to="/" className="text-2xl font-display text-gold tracking-wide">PowerLog</Link>
+          <h1 className="text-2xl font-light text-champagne mt-4">Create Account</h1>
+          <p className="text-muted">Start your powerlifting journey</p>
         </div>
-        <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-8 rounded-xl shadow-sm border space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="bg-raised p-8 border border-hairline space-y-4">
           {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">{error}</div>
+            <div className="bg-danger/10 text-danger p-3 text-sm">{error}</div>
           )}
           <div>
-            <label className="block text-sm font-medium mb-1">Name</label>
+            <label className="block text-sm font-medium text-champagne mb-1">Name</label>
             <input
               type="text"
               {...register('name')}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              className="w-full px-4 py-2 bg-lacquer border border-hairline text-body rounded-sm focus:border-gold focus:ring-1 focus:ring-gold outline-none placeholder:text-muted"
               placeholder="Your name"
             />
-            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
+            {errors.name && <p className="text-danger text-sm mt-1">{errors.name.message}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
+            <label className="block text-sm font-medium text-champagne mb-1">Email</label>
             <input
               type="email"
               {...register('email')}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              className="w-full px-4 py-2 bg-lacquer border border-hairline text-body rounded-sm focus:border-gold focus:ring-1 focus:ring-gold outline-none placeholder:text-muted"
               placeholder="you@example.com"
             />
-            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
+            {errors.email && <p className="text-danger text-sm mt-1">{errors.email.message}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Password</label>
+            <label className="block text-sm font-medium text-champagne mb-1">Password</label>
             <input
               type="password"
               {...register('password')}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              className="w-full px-4 py-2 bg-lacquer border border-hairline text-body rounded-sm focus:border-gold focus:ring-1 focus:ring-gold outline-none placeholder:text-muted"
               placeholder="At least 6 characters"
             />
-            {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>}
+            {errors.password && <p className="text-danger text-sm mt-1">{errors.password.message}</p>}
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50"
+            className="w-full py-3 bg-gold text-lacquer rounded-sm font-semibold hover:bg-gold-dim disabled:opacity-50"
           >
             {loading ? 'Creating account...' : 'Create Account'}
           </button>
-          <p className="text-center text-sm text-gray-500">
+          <p className="text-center text-sm text-muted">
             Already have an account?{' '}
-            <Link to="/login" className="text-blue-600 hover:underline">Sign in</Link>
+            <Link to="/login" className="text-gold hover:underline">Sign in</Link>
           </p>
         </form>
       </div>

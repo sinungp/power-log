@@ -21,25 +21,25 @@ const testimonials = [
 
 export default function TestimonialsSection() {
   return (
-    <section className="py-20">
+    <section className="py-20 bg-lacquer">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">What Users Say</h2>
-        <p className="text-gray-500 text-center mb-12 max-w-xl mx-auto">
+        <h2 className="text-3xl md:text-4xl text-center mb-4">What Users Say</h2>
+        <p className="text-muted text-center mb-12 max-w-xl mx-auto">
           Join thousands of powerlifters using PowerLog.
         </p>
-        <div className="grid md:grid-3 gap-8">
+        <div className="grid md:grid-cols-3 gap-6">
           {testimonials.map((t) => (
-            <div key={t.name} className="bg-white p-6 rounded-xl border shadow-sm">
+            <div key={t.name} className="bg-raised p-6 border border-hairline">
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                <div className="w-10 h-10 bg-gold text-lacquer flex items-center justify-center font-bold text-sm">
                   {t.avatar}
                 </div>
                 <div>
-                  <div className="font-semibold">{t.name}</div>
-                  <div className="text-sm text-gray-500">{t.role}</div>
+                  <div className="font-semibold text-champagne">{t.name}</div>
+                  <div className="text-sm text-muted">{t.role}</div>
                 </div>
               </div>
-              <p className="text-gray-600 text-sm italic">"{t.text}"</p>
+              <p className="text-body text-sm leading-relaxed italic">&ldquo;{t.text}&rdquo;</p>
             </div>
           ))}
         </div>

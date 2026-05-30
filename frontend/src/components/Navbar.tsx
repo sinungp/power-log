@@ -1,9 +1,18 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
+
+const navLinks = [
+  { to: '/app/dashboard', label: 'Dashboard' },
+  { to: '/app/calculator', label: 'Calculator' },
+  { to: '/app/lifts', label: 'Lifts' },
+  { to: '/app/accessories', label: 'Accessories' },
+  { to: '/app/checklist', label: 'Checklist' },
+]
 
 export default function Navbar() {
   const { user, logout } = useAuthStore()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const handleLogout = () => {
     logout()
@@ -11,29 +20,37 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="bg-white shadow-sm border-b">
+    <nav className="bg-raised border-b border-hairline">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        <div className="flex justify-between h-14">
           <div className="flex items-center gap-8">
-            <Link to="/app/dashboard" className="text-xl font-bold text-blue-600">
+            <Link to="/app/dashboard" className="text-xl font-display text-gold tracking-wide">
               PowerLog
             </Link>
             <div className="hidden md:flex gap-6">
-              <Link to="/app/dashboard" className="text-gray-600 hover:text-blue-600">Dashboard</Link>
-              <Link to="/app/calculator" className="text-gray-600 hover:text-blue-600">Calculator</Link>
-              <Link to="/app/lifts" className="text-gray-600 hover:text-blue-600">Lifts</Link>
-              <Link to="/app/accessories" className="text-gray-600 hover:text-blue-600">Accessories</Link>
-              <Link to="/app/checklist" className="text-gray-600 hover:text-blue-600">Checklist</Link>
+              {navLinks.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className={`text-sm ${
+                    location.pathname === link.to
+                      ? 'text-gold'
+                      : 'text-muted hover:text-gold'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-500">{user?.name}</span>
-            <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+            <span className="text-sm text-muted">{user?.name}</span>
+            <span className="px-2 py-0.5 text-xs font-medium border border-gold text-gold">
               {user?.plan}
             </span>
             <button
               onClick={handleLogout}
-              className="text-sm text-red-500 hover:text-red-700"
+              className="text-sm text-danger hover:text-danger"
             >
               Logout
             </button>

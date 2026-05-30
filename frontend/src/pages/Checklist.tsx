@@ -44,42 +44,42 @@ export default function ChecklistPage() {
     <div className="max-w-2xl mx-auto space-y-8">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">Checklist</h1>
-          <p className="text-gray-500">{doneCount}/{checklists.length} completed today</p>
+          <h1 className="text-2xl font-light text-champagne">Checklist</h1>
+          <p className="text-muted">{doneCount}/{checklists.length} completed today</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setType('warmup')} className={`px-4 py-2 rounded-lg text-sm ${type === 'warmup' ? 'bg-orange-600 text-white' : 'bg-gray-200'}`}>
+          <button onClick={() => setType('warmup')} className={`px-4 py-2 text-sm rounded-sm ${type === 'warmup' ? 'bg-patina text-lacquer' : 'border border-hairline text-muted hover:bg-hovered hover:text-champagne'}`}>
             Warmup
           </button>
-          <button onClick={() => setType('cooldown')} className={`px-4 py-2 rounded-lg text-sm ${type === 'cooldown' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+          <button onClick={() => setType('cooldown')} className={`px-4 py-2 text-sm rounded-sm ${type === 'cooldown' ? 'bg-patina text-lacquer' : 'border border-hairline text-muted hover:bg-hovered hover:text-champagne'}`}>
             Cooldown
           </button>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border shadow-sm divide-y">
+      <div className="bg-raised border border-hairline divide-y divide-hairline">
         {checklists.map((item) => {
           const log = getLog(item.id)
           const isDone = log?.is_done || false
           return (
-            <label key={item.id} className="flex items-center gap-4 p-4 cursor-pointer hover:bg-gray-50">
+            <label key={item.id} className="flex items-center gap-4 p-4 cursor-pointer hover:bg-hovered transition-colors">
               <input
                 type="checkbox"
                 checked={isDone}
                 onChange={() => toggleCheck(item.id, isDone)}
-                className="w-5 h-5 rounded border-gray-300 text-blue-600"
+                className="w-5 h-5 rounded-sm border-hairline text-gold bg-lacquer focus:ring-gold focus:ring-1"
               />
               <div className="flex-1">
-                <span className={isDone ? 'line-through text-gray-400' : ''}>{item.name}</span>
+                <span className={isDone ? 'line-through text-muted' : 'text-body'}>{item.name}</span>
                 {item.duration_sec && (
-                  <span className="ml-2 text-xs text-gray-400">{item.duration_sec}s</span>
+                  <span className="ml-2 text-xs text-muted">{item.duration_sec}s</span>
                 )}
               </div>
             </label>
           )
         })}
         {checklists.length === 0 && (
-          <p className="p-6 text-center text-gray-400">No checklist items found</p>
+          <p className="p-6 text-center text-muted">No checklist items found</p>
         )}
       </div>
     </div>

@@ -33,61 +33,61 @@ export default function Calculator() {
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">1RM Calculator</h1>
-        <p className="text-gray-500">Calculate your one-rep max using multiple formulas</p>
+        <h1 className="text-2xl font-light text-champagne">1RM Calculator</h1>
+        <p className="text-muted">Calculate your one-rep max using multiple formulas</p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-6 rounded-xl border shadow-sm space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="bg-raised p-6 border border-hairline space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Weight (kg)</label>
+            <label className="block text-sm font-medium text-champagne mb-1">Weight (kg)</label>
             <input
               type="number"
               step="0.01"
               {...register('weight_kg')}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-4 py-2 bg-lacquer border border-hairline text-body rounded-sm focus:border-gold focus:ring-1 focus:ring-gold outline-none placeholder:text-muted"
               placeholder="e.g. 100"
             />
-            {errors.weight_kg && <p className="text-red-500 text-sm mt-1">{errors.weight_kg.message}</p>}
+            {errors.weight_kg && <p className="text-danger text-sm mt-1">{errors.weight_kg.message}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Reps</label>
+            <label className="block text-sm font-medium text-champagne mb-1">Reps</label>
             <input
               type="number"
               {...register('reps')}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-4 py-2 bg-lacquer border border-hairline text-body rounded-sm focus:border-gold focus:ring-1 focus:ring-gold outline-none placeholder:text-muted"
               placeholder="e.g. 5"
             />
-            {errors.reps && <p className="text-red-500 text-sm mt-1">{errors.reps.message}</p>}
+            {errors.reps && <p className="text-danger text-sm mt-1">{errors.reps.message}</p>}
           </div>
         </div>
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50"
+          className="w-full py-3 bg-gold text-lacquer rounded-sm font-semibold hover:bg-gold-dim disabled:opacity-50"
         >
           {loading ? 'Calculating...' : 'Calculate 1RM'}
         </button>
       </form>
 
       {result && (
-        <div className="bg-white p-6 rounded-xl border shadow-sm">
-          <h2 className="font-semibold mb-4">Results</h2>
+        <div className="bg-raised p-6 border border-hairline">
+          <h2 className="font-semibold text-champagne mb-4">Results</h2>
           {result.warning && (
-            <div className="bg-yellow-50 text-yellow-700 p-3 rounded-lg text-sm mb-4">{result.warning}</div>
+            <div className="bg-danger/10 text-danger p-3 text-sm mb-4">{result.warning}</div>
           )}
-          <div className="grid gap-4">
-            <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-              <span className="font-medium">Epley</span>
-              <span className="text-xl font-bold text-blue-600">{result.epley} kg</span>
+          <div className="grid gap-3">
+            <div className="flex justify-between items-center p-3 bg-lacquer border border-hairline">
+              <span className="font-medium text-champagne">Epley</span>
+              <span className="text-xl font-bold text-gold">{result.epley} kg</span>
             </div>
-            <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-              <span className="font-medium">Brzycki</span>
-              <span className="text-xl font-bold text-green-600">{result.brzycki} kg</span>
+            <div className="flex justify-between items-center p-3 bg-lacquer border border-hairline">
+              <span className="font-medium text-champagne">Brzycki</span>
+              <span className="text-xl font-bold text-gold">{result.brzycki} kg</span>
             </div>
-            <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
-              <span className="font-medium">Lombardi</span>
-              <span className="text-xl font-bold text-purple-600">{result.lombardi} kg</span>
+            <div className="flex justify-between items-center p-3 bg-lacquer border border-hairline">
+              <span className="font-medium text-champagne">Lombardi</span>
+              <span className="text-xl font-bold text-gold">{result.lombardi} kg</span>
             </div>
           </div>
         </div>

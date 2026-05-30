@@ -32,40 +32,40 @@ const plans = [
 
 export default function PricingSection() {
   return (
-    <section className="py-20 bg-gray-50">
+    <section className="py-20 bg-lacquer">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">Simple Pricing</h2>
-        <p className="text-gray-500 text-center mb-12 max-w-xl mx-auto">
+        <h2 className="text-3xl md:text-4xl text-center mb-4">Simple Pricing</h2>
+        <p className="text-muted text-center mb-12 max-w-xl mx-auto">
           Start free. Upgrade when you need more.
         </p>
-        <div className="grid md:grid-2 gap-8 max-w-3xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
           {plans.map((p) => (
             <div
               key={p.name}
-              className={`rounded-xl p-8 border ${
+              className={`p-8 border ${
                 p.highlighted
-                  ? 'bg-blue-600 text-white border-blue-600 shadow-xl scale-105'
-                  : 'bg-white border-gray-200'
+                  ? 'bg-raised border-gold'
+                  : 'bg-raised border-hairline'
               }`}
             >
-              <h3 className="text-2xl font-bold mb-2">{p.name}</h3>
+              <h3 className="text-2xl font-bold text-champagne mb-2">{p.name}</h3>
               <div className="mb-6">
-                <span className="text-4xl font-bold">{p.price}</span>
-                <span className={p.highlighted ? 'text-blue-200' : 'text-gray-400'}>{p.period}</span>
+                <span className="text-4xl font-bold text-champagne">{p.price}</span>
+                <span className="text-muted">{p.period}</span>
               </div>
               <ul className="space-y-3 mb-8">
                 {p.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm">
-                    <span>✓</span>
+                  <li key={f} className="flex items-start gap-2 text-sm text-body">
+                    <span className="text-gold">&#10003;</span>
                     {f}
                   </li>
                 ))}
               </ul>
               <button
-                className={`w-full py-3 rounded-lg font-semibold ${
+                className={`w-full py-3 rounded-sm font-semibold text-sm ${
                   p.highlighted
-                    ? 'bg-white text-blue-600 hover:bg-gray-100'
-                    : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                    ? 'bg-gold text-lacquer hover:bg-gold-dim'
+                    : 'border border-gold text-gold hover:bg-gold hover:text-lacquer'
                 }`}
               >
                 {p.cta}
