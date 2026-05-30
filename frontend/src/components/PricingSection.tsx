@@ -1,3 +1,5 @@
+import { useInView } from '../hooks/useInView'
+
 const plans = [
   {
     name: 'Free',
@@ -31,22 +33,27 @@ const plans = [
 ]
 
 export default function PricingSection() {
+  const { ref, inView } = useInView()
+
   return (
-    <section className="py-20 bg-lacquer">
+    <section ref={ref} className="py-20 bg-lacquer">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl md:text-4xl text-center mb-4">Simple Pricing</h2>
-        <p className="text-muted text-center mb-12 max-w-xl mx-auto">
+        <h2 className={`text-3xl md:text-4xl text-center mb-4 transition-all duration-700 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
+          Simple Pricing
+        </h2>
+        <p className={`text-muted text-center mb-12 max-w-xl mx-auto transition-all duration-700 delay-100 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
           Start free. Upgrade when you need more.
         </p>
         <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-          {plans.map((p) => (
+          {plans.map((p, i) => (
             <div
               key={p.name}
-              className={`p-8 border ${
+              className={`p-8 border transition-all duration-500 ${
                 p.highlighted
                   ? 'bg-raised border-gold'
                   : 'bg-raised border-hairline'
-              }`}
+              } ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+              style={{ transitionDelay: `${300 + i * 200}ms` }}
             >
               <h3 className="text-2xl font-bold text-champagne mb-2">{p.name}</h3>
               <div className="mb-6">
@@ -62,7 +69,7 @@ export default function PricingSection() {
                 ))}
               </ul>
               <button
-                className={`w-full py-3 rounded-sm font-semibold text-sm ${
+                className={`w-full py-3 rounded-sm font-semibold text-sm transition-all duration-300 ${
                   p.highlighted
                     ? 'bg-gold text-lacquer hover:bg-gold-dim'
                     : 'border border-gold text-gold hover:bg-gold hover:text-lacquer'

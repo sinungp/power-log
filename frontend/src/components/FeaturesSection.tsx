@@ -1,3 +1,5 @@
+import { useInView } from '../hooks/useInView'
+
 const features = [
   {
     title: '1RM Calculator',
@@ -26,17 +28,25 @@ const features = [
 ]
 
 export default function FeaturesSection() {
+  const { ref, inView } = useInView()
+
   return (
-    <section className="py-20 bg-lacquer">
+    <section ref={ref} className="py-20 bg-lacquer">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl md:text-4xl text-center mb-4">Everything You Need</h2>
-        <p className="text-muted text-center mb-12 max-w-xl mx-auto">
+        <h2 className={`text-3xl md:text-4xl text-center mb-4 transition-all duration-700 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
+          Everything You Need
+        </h2>
+        <p className={`text-muted text-center mb-12 max-w-xl mx-auto transition-all duration-700 delay-100 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
           PowerLog combines all the tools a powerlifter needs in one simple app.
         </p>
-        <div className="grid md:grid-cols-3 gap-6">
-          {features.map((f) => (
-            <div key={f.title} className="bg-raised p-6 border border-hairline hover:bg-hovered transition-colors">
-              <span className="block w-6 h-[2px] bg-gold mb-3" />
+        <div className="grid md:grid-cols-3 gap-4">
+          {features.map((f, i) => (
+            <div
+              key={f.title}
+              className={`bg-raised p-6 border border-hairline hover:bg-hovered transition-all duration-500 hover:-translate-y-1 hover:border-gold/30 ${inView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}
+              style={{ transitionDelay: `${150 + i * 100}ms` }}
+            >
+              <span className="block w-8 h-[2px] bg-gold mb-3" />
               <h3 className="text-lg font-semibold text-champagne mb-2">{f.title}</h3>
               <p className="text-body text-sm leading-relaxed">{f.description}</p>
             </div>

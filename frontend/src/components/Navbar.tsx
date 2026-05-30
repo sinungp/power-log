@@ -1,5 +1,6 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
+import { useThemeStore } from '../store/themeStore'
 
 const navLinks = [
   { to: '/app/dashboard', label: 'Dashboard' },
@@ -11,6 +12,7 @@ const navLinks = [
 
 export default function Navbar() {
   const { user, logout } = useAuthStore()
+  const { theme, toggle } = useThemeStore()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -44,6 +46,22 @@ export default function Navbar() {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <button
+              onClick={toggle}
+              className="w-8 h-8 flex items-center justify-center text-muted hover:text-gold border border-hairline hover:border-gold"
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="5"/>
+                  <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                </svg>
+              ) : (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+              )}
+            </button>
             <span className="text-sm text-muted">{user?.name}</span>
             <span className="px-2 py-0.5 text-xs font-medium border border-gold text-gold">
               {user?.plan}

@@ -16,6 +16,16 @@
   --font-body: "Albert Sans", system-ui, sans-serif;
 }
 
+[data-theme="light"] {
+  --color-lacquer: oklch(96% 0.003 90);
+  --color-raised: oklch(99% 0 0);
+  --color-hovered: oklch(93% 0.003 90);
+  --color-champagne: oklch(15% 0.003 90);
+  --color-body: oklch(30% 0.003 90);
+  --color-muted: oklch(60% 0 0);
+  --color-hairline: oklch(88% 0 0);
+}
+
 @layer base {
   * {
     border-color: var(--color-hairline);
@@ -50,4 +60,122 @@
     background-color: var(--color-gold);
     color: var(--color-lacquer);
   }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-lacquer);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-hairline);
+    border-radius: 3px;
+  }
+}
+
+/* ─── Animations ─── */
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes fade-in-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes gold-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+@keyframes plate-load {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes weight-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease both;
+}
+.animate-fade-in-scale {
+  animation: fade-in-scale 0.5s ease both;
+}
+.animate-slide-in-left {
+  animation: slide-in-left 0.5s ease both;
+}
+.animate-slide-in-right {
+  animation: slide-in-right 0.5s ease both;
+}
+.animate-gold-pulse {
+  animation: gold-pulse 2s ease-in-out infinite;
+}
+/* staggered delays */
+.animate-delay-100 { animation-delay: 100ms; }
+.animate-delay-200 { animation-delay: 200ms; }
+.animate-delay-300 { animation-delay: 300ms; }
+.animate-delay-400 { animation-delay: 400ms; }
+.animate-delay-500 { animation-delay: 500ms; }
+.animate-delay-600 { animation-delay: 600ms; }
+.animate-delay-700 { animation-delay: 700ms; }
+.animate-delay-800 { animation-delay: 800ms; }
+
+/* barbell plate stagger */
+.plate-left-outer { animation: plate-load 0.4s ease 0.2s both; transform-origin: right center; }
+.plate-left-inner { animation: plate-load 0.4s ease 0.35s both; transform-origin: right center; }
+.plate-right-inner { animation: plate-load 0.4s ease 0.35s both; transform-origin: left center; }
+.plate-right-outer { animation: plate-load 0.4s ease 0.2s both; transform-origin: left center; }
+.bar-shaft { animation: fade-in-up 0.4s ease 0.1s both; }
+
+/* weight spinner (loading) */
+.spinner-weight {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-hairline);
+  border-top-color: var(--color-gold);
+  border-radius: 50%;
+  animation: weight-spin 0.8s linear infinite;
 }
