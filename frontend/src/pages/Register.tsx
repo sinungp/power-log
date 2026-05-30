@@ -6,7 +6,7 @@ import { z } from 'zod'
 import axiosInstance from '../api/axiosInstance'
 import type { ApiResponse, AuthResponse } from '../types'
 
-const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const OAUTH_URL = import.meta.env.VITE_OAUTH_URL || 'http://localhost:8080'
 
 const schema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -58,7 +58,7 @@ export default function Register() {
           {oauthProviders.map((p) => (
             <a
               key={p.id}
-              href={`${API}/oauth/${p.id}/login`}
+              href={`${OAUTH_URL}/oauth/${p.id}/login`}
               className="flex items-center justify-center gap-3 bg-raised border border-hairline text-body py-2.5 rounded-sm hover:bg-hovered hover:border-gold/30 text-sm"
             >
               <span className="w-6 h-6 flex items-center justify-center font-bold text-xs border border-hairline text-muted">
