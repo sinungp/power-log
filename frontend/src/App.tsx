@@ -10,6 +10,9 @@ import Calculator from './pages/Calculator'
 import LiftRecord from './pages/LiftRecord'
 import AccessoryPage from './pages/Accessory'
 import ChecklistPage from './pages/Checklist'
+import BodyWeightPage from './pages/BodyWeight'
+import RecoveryPage from './pages/Recovery'
+import AnalyticsPage from './pages/Analytics'
 import ProtectedRoute from './components/ProtectedRoute'
 
 export default function App() {
@@ -29,6 +32,9 @@ export default function App() {
             <Route path="lifts" element={<LiftRecord />} />
             <Route path="accessories" element={<AccessoryPage />} />
             <Route path="checklist" element={<ChecklistPage />} />
+            <Route path="body-weight" element={<BodyWeightPage />} />
+            <Route path="recovery" element={<RecoveryPage />} />
+            <Route path="analytics" element={<AnalyticsPage />} />
           </Route>
         </Route>
       </Routes>

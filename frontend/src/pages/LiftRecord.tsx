@@ -95,25 +95,25 @@ export default function LiftRecord() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-light text-champagne">Lift Records</h1>
+      <h1 className="text-xl sm:text-2xl font-light text-champagne">Lift Records</h1>
 
       {Object.keys(prs).length > 0 && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
           {Object.entries(prs).map(([type, pr]) => (
-            <div key={type} className="bg-raised p-4 border border-hairline text-center">
-              <span className="text-sm text-muted capitalize">{type} PR</span>
-              <p className="text-xl font-bold text-gold">{pr.weight_kg}kg x {pr.reps}</p>
+            <div key={type} className="bg-raised p-3 sm:p-4 border border-hairline text-center">
+              <span className="text-xs sm:text-sm text-muted capitalize">{type} PR</span>
+              <p className="text-lg sm:text-xl font-bold text-gold">{pr.weight_kg}kg x {pr.reps}</p>
               <span className="text-xs text-muted">{pr.date}</span>
             </div>
           ))}
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-raised p-6 border border-hairline space-y-4">
-        <div className="grid md:grid-cols-3 gap-4">
-          <div>
+      <form onSubmit={handleSubmit(onSubmit)} className="bg-raised p-4 sm:p-6 border border-hairline space-y-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+          <div className="col-span-2 sm:col-span-1">
             <label className="block text-sm font-medium text-champagne mb-1">Lift Type</label>
-            <select {...register('lift_type')} className="w-full px-4 py-2 bg-lacquer border border-hairline text-body rounded-sm focus:border-gold focus:ring-1 focus:ring-gold outline-none">
+            <select {...register('lift_type')} className="w-full px-3 sm:px-4 py-2 bg-lacquer border border-hairline text-body rounded-sm focus:border-gold focus:ring-1 focus:ring-gold outline-none text-sm">
               <option value="squat">Squat</option>
               <option value="bench">Bench</option>
               <option value="deadlift">Deadlift</option>
@@ -121,25 +121,25 @@ export default function LiftRecord() {
           </div>
           <div>
             <label className="block text-sm font-medium text-champagne mb-1">Weight (kg)</label>
-            <input type="number" step="0.01" {...register('weight_kg')} className="w-full px-4 py-2 bg-lacquer border border-hairline text-body rounded-sm focus:border-gold focus:ring-1 focus:ring-gold outline-none" />
+            <input type="number" step="0.01" {...register('weight_kg')} className="w-full px-3 sm:px-4 py-2 bg-lacquer border border-hairline text-body rounded-sm focus:border-gold focus:ring-1 focus:ring-gold outline-none text-sm" />
             {errors.weight_kg && <p className="text-danger text-sm">{errors.weight_kg.message}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-champagne mb-1">Reps</label>
-            <input type="number" {...register('reps')} className="w-full px-4 py-2 bg-lacquer border border-hairline text-body rounded-sm focus:border-gold focus:ring-1 focus:ring-gold outline-none" />
+            <input type="number" {...register('reps')} className="w-full px-3 sm:px-4 py-2 bg-lacquer border border-hairline text-body rounded-sm focus:border-gold focus:ring-1 focus:ring-gold outline-none text-sm" />
             {errors.reps && <p className="text-danger text-sm">{errors.reps.message}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-champagne mb-1">RPE (6.0-10.0)</label>
-            <input type="number" step="0.5" {...register('rpe')} className="w-full px-4 py-2 bg-lacquer border border-hairline text-body rounded-sm focus:border-gold focus:ring-1 focus:ring-gold outline-none placeholder:text-muted" placeholder="Optional" />
+            <input type="number" step="0.5" {...register('rpe')} className="w-full px-3 sm:px-4 py-2 bg-lacquer border border-hairline text-body rounded-sm focus:border-gold focus:ring-1 focus:ring-gold outline-none placeholder:text-muted text-sm" placeholder="Optional" />
           </div>
           <div>
             <label className="block text-sm font-medium text-champagne mb-1">Date</label>
-            <input type="date" {...register('lifted_at')} className="w-full px-4 py-2 bg-lacquer border border-hairline text-body rounded-sm focus:border-gold focus:ring-1 focus:ring-gold outline-none" />
+            <input type="date" {...register('lifted_at')} className="w-full px-3 sm:px-4 py-2 bg-lacquer border border-hairline text-body rounded-sm focus:border-gold focus:ring-1 focus:ring-gold outline-none text-sm" />
           </div>
-          <div>
+          <div className="col-span-2 sm:col-span-1">
             <label className="block text-sm font-medium text-champagne mb-1">Notes</label>
-            <input type="text" {...register('notes')} className="w-full px-4 py-2 bg-lacquer border border-hairline text-body rounded-sm focus:border-gold focus:ring-1 focus:ring-gold outline-none placeholder:text-muted" placeholder="Optional" />
+            <input type="text" {...register('notes')} className="w-full px-3 sm:px-4 py-2 bg-lacquer border border-hairline text-body rounded-sm focus:border-gold focus:ring-1 focus:ring-gold outline-none placeholder:text-muted text-sm" placeholder="Optional" />
           </div>
         </div>
         <div className="flex gap-2">
@@ -162,34 +162,34 @@ export default function LiftRecord() {
         ))}
       </div>
 
-      <div className="bg-raised border border-hairline overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="bg-raised border border-hairline overflow-x-auto">
+        <table className="w-full text-sm min-w-[500px]">
           <thead className="bg-lacquer">
             <tr>
-              <th className="p-3 text-left text-muted font-medium">Type</th>
-              <th className="p-3 text-left text-muted font-medium">Weight</th>
-              <th className="p-3 text-left text-muted font-medium">Reps</th>
-              <th className="p-3 text-left text-muted font-medium">RPE</th>
-              <th className="p-3 text-left text-muted font-medium">Date</th>
-              <th className="p-3 text-left text-muted font-medium">Actions</th>
+              <th className="p-2 sm:p-3 text-left text-muted font-medium">Type</th>
+              <th className="p-2 sm:p-3 text-left text-muted font-medium">Weight</th>
+              <th className="p-2 sm:p-3 text-left text-muted font-medium">Reps</th>
+              <th className="p-2 sm:p-3 text-left text-muted font-medium">RPE</th>
+              <th className="p-2 sm:p-3 text-left text-muted font-medium">Date</th>
+              <th className="p-2 sm:p-3 text-left text-muted font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
             {lifts.map((lift) => (
               <tr key={lift.id} className="border-t border-hairline">
-                <td className="p-3 capitalize text-champagne">{lift.lift_type}</td>
-                <td className="p-3 text-body">{lift.weight_kg} kg</td>
-                <td className="p-3 text-body">{lift.reps}</td>
-                <td className="p-3 text-body">{lift.rpe || '-'}</td>
-                <td className="p-3 text-muted">{lift.lifted_at}</td>
-                <td className="p-3 flex gap-2">
-                  <button onClick={() => handleEdit(lift)} className="text-gold hover:underline text-xs">Edit</button>
+                <td className="p-2 sm:p-3 capitalize text-champagne whitespace-nowrap">{lift.lift_type}</td>
+                <td className="p-2 sm:p-3 text-body whitespace-nowrap">{lift.weight_kg} kg</td>
+                <td className="p-2 sm:p-3 text-body whitespace-nowrap">{lift.reps}</td>
+                <td className="p-2 sm:p-3 text-body whitespace-nowrap">{lift.rpe || '-'}</td>
+                <td className="p-2 sm:p-3 text-muted whitespace-nowrap">{lift.lifted_at}</td>
+                <td className="p-2 sm:p-3 whitespace-nowrap">
+                  <button onClick={() => handleEdit(lift)} className="text-gold hover:underline text-xs mr-2">Edit</button>
                   <button onClick={() => handleDelete(lift.id)} className="text-danger hover:underline text-xs">Delete</button>
                 </td>
               </tr>
             ))}
             {lifts.length === 0 && (
-              <tr><td colSpan={6} className="p-6 text-center text-muted">No lift records yet</td></tr>
+              <tr><td colSpan={6} className="p-4 sm:p-6 text-center text-muted">No lift records yet</td></tr>
             )}
           </tbody>
         </table>

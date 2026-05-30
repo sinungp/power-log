@@ -28,11 +28,15 @@ func Init(cfg *config.Config) error {
 		&models.Accessory{},
 		&models.Checklist{},
 		&models.UserChecklistLog{},
+		&models.BodyWeightLog{},
+		&models.RecoveryLog{},
 	); err != nil {
 		return err
 	}
 
 	DB.Exec("ALTER TABLE users MODIFY password varchar(255) NULL;")
+	DB.Exec("ALTER TABLE lift_records ADD COLUMN bar_weight_kg DECIMAL(6,2) NULL COMMENT 'Berat bar yang digunakan' AFTER rpe;")
+	// Ignore error if column already exists (successive runs)
 
 	return nil
 }

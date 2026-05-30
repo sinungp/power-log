@@ -20,12 +20,12 @@ export default function AccessoryPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-light text-champagne">Exercise Accessories</h1>
+      <h1 className="text-xl sm:text-2xl font-light text-champagne">Exercise Accessories</h1>
 
       <div className="flex flex-wrap gap-4">
         <div className="flex gap-2">
           {targets.map((t) => (
-            <button key={t} onClick={() => setTarget(t)} className={`px-4 py-2 text-sm rounded-sm capitalize ${target === t ? 'bg-gold text-lacquer' : 'border border-hairline text-muted hover:bg-hovered hover:text-champagne'}`}>
+            <button key={t} onClick={() => setTarget(t)} className={`px-3 sm:px-4 py-2 text-xs sm:text-sm rounded-sm capitalize ${target === t ? 'bg-gold text-lacquer' : 'border border-hairline text-muted hover:bg-hovered hover:text-champagne'}`}>
               {t}
             </button>
           ))}
@@ -38,9 +38,9 @@ export default function AccessoryPage() {
         </select>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
         {accessories.map((acc) => (
-          <div key={acc.id} className="bg-raised p-6 border border-hairline">
+          <div key={acc.id} className="bg-raised p-4 sm:p-6 border border-hairline">
             <h3 className="font-semibold text-champagne mb-2">{acc.name}</h3>
             {acc.description && <p className="text-muted text-sm mb-3 leading-relaxed">{acc.description}</p>}
             <div className="flex gap-2 text-xs">

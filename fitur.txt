@@ -1,0 +1,438 @@
+================================================================================
+  PLANNING DOKUMEN: FITUR TAMBAHAN POWERLIFTING SAAS APP
+  Sifat     : Addons — tidak mengubah kode/tabel lama
+  Stack     : Golang (BE) | MariaDB (DB) | TypeScript + React (FE)
+  Dibuat untuk: Eksekusi oleh model AI (cost-efficient)
+================================================================================
+
+INSTRUKSI UNTUK MODEL:
+- Dokumen ini adalah ADDONS dari planning sebelumnya (powerlifting_saas_plan.txt)
+- Jangan ubah tabel atau kode yang sudah ada
+- Boleh tambah kolom baru di tabel lama HANYA jika disebutkan eksplisit
+- Ikuti konvensi response, middleware JWT, dan struktur folder yang sudah ada
+- Jalankan fase berurutan
+
+================================================================================
+FITUR YANG DITAMBAHKAN:
+  1. Volume & Intensitas Mingguan
+  2. RPE Tracking per Sesi (tambah kolom di lift_records)
+  3. Wilks / IPF GL Score Calculator
+  4. Rasio Antar Lift (deteksi kelemahan)
+  5. Berat Badan Mingguan (tracking kelas berat)
+  6. Tidur & Stres (recovery data harian)
+================================================================================
+
+================================================================================
+BAGIAN 1: PERUBAHAN SKEMA DATABASE
+================================================================================
+
+--- 1A. TAMBAH KOLOM DI TABEL LAMA ---
+
+Tabel: lift_records
+Tambahkan kolom berikut (jika belum ada dari planning awal):
+
+  ALTER TABLE lift_records
+    ADD COLUMN rpe DECIMAL(3,1) NULL COMMENT 'Rate of Perceived Exertion 6.0-10.0',
+    ADD COLUMN bar_weight_kg DECIMAL(6,2) NULL COMMENT 'Berat bar yang digunakan';
+
+Catatan: kolom rpe mungkin sudah ada di planning awal — cek dulu, skip jika sudah ada.
+
+--- 1B. TABEL BARU ---
+
+-- Tabel: body_weight_logs (tracking berat badan mingguan)
+CREATE TABLE body_weight_logs (
+  id           BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id      BIGINT UNSIGNED  NOT NULL,
+  weight_kg    DECIMAL(5,2)     NOT NULL,
+  logged_at    DATE             NOT NULL,
+  notes        TEXT             NULL,
+  created_at   DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE KEY uq_user_date (user_id, logged_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabel: recovery_logs (tidur & stres harian)
+CREATE TABLE recovery_logs (
+  id              BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id         BIGINT UNSIGNED  NOT NULL,
+  logged_at       DATE             NOT NULL,
+  sleep_hours     DECIMAL(4,1)     NOT NULL  COMMENT 'Jam tidur, misal 7.5',
+  sleep_quality   TINYINT UNSIGNED NOT NULL  COMMENT 'Kualitas tidur 1-10',
+  stress_level    TINYINT UNSIGNED NOT NULL  COMMENT 'Level stres 1-10',
+  doms_level      TINYINT UNSIGNED NULL      COMMENT 'Nyeri otot 1-5',
+  notes           TEXT             NULL,
+  created_at      DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  UNIQUE KEY uq_user_date (user_id, logged_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Constraint tambahan recovery_logs (jalankan setelah CREATE TABLE):
+ALTER TABLE recovery_logs
+  ADD CONSTRAINT chk_sleep_quality CHECK (sleep_quality BETWEEN 1 AND 10),
+  ADD CONSTRAINT chk_stress_level  CHECK (stress_level  BETWEEN 1 AND 10),
+  ADD CONSTRAINT chk_doms_level    CHECK (doms_level    BETWEEN 1 AND 5);
+
+================================================================================
+BAGIAN 2: API ENDPOINT BARU
+================================================================================
+
+BASE URL: /api/v1
+Semua endpoint bertanda [AUTH] wajib pakai JWT middleware yang sudah ada.
+
+--- VOLUME & INTENSITAS ---
+GET  /analytics/volume-weekly          [AUTH]
+  Query params: ?weeks=4 (default 4, max 12)
+  Response: array per minggu {
+    week_start: date,
+    week_end: date,
+    squat_volume_kg: float,
+    bench_volume_kg: float,
+    deadlift_volume_kg: float,
+    total_volume_kg: float,
+    avg_intensity_pct: float   // rata-rata % dari estimated 1RM
+  }
+
+GET  /analytics/intensity-distribution [AUTH]
+  Query params: ?lift=squat|bench|deadlift&weeks=4
+  Response: distribusi sesi berdasarkan zona intensitas:
+    zone_1: <70% 1RM (pct sesi)
+    zone_2: 70-80% 1RM
+    zone_3: 80-90% 1RM
+    zone_4: >90% 1RM
+
+--- WILKS & IPF GL SCORE ---
+POST /calculator/wilks                 [AUTH opsional, bisa publik]
+  Body: { body_weight_kg: float, total_kg: float, sex: "male"|"female" }
+  Response: { wilks_score: float, ipf_gl_score: float }
+
+--- RASIO ANTAR LIFT ---
+GET  /analytics/lift-ratio             [AUTH]
+  Response: {
+    squat_1rm: float,
+    bench_1rm: float,
+    deadlift_1rm: float,
+    bench_to_squat_pct: float,       // bench / squat * 100
+    deadlift_to_squat_pct: float,    // deadlift / squat * 100
+    squat_to_bodyweight: float,      // squat / body_weight
+    bench_to_bodyweight: float,
+    deadlift_to_bodyweight: float,
+    weakness: string,                // "bench" | "squat" | "deadlift" | "balanced"
+    weakness_note: string            // penjelasan singkat
+  }
+  Catatan: gunakan estimated 1RM dari lift_records terbaru per jenis lift
+
+--- BERAT BADAN ---
+GET    /body-weight                    [AUTH]
+  Query params: ?limit=12 (default 12 entri terakhir)
+  Response: list body_weight_logs milik user
+
+POST   /body-weight                    [AUTH]
+  Body: { weight_kg: float, logged_at: date, notes: string (opsional) }
+
+PUT    /body-weight/:id                [AUTH]
+DELETE /body-weight/:id                [AUTH]
+
+GET    /body-weight/latest             [AUTH]
+  Response: satu entri terbaru + powerlifting weight class recommendation:
+    { weight_kg: float, recommended_class: string, next_class_up: string, next_class_down: string }
+
+--- RECOVERY LOG ---
+GET    /recovery                       [AUTH]
+  Query params: ?days=7 (default 7, max 30)
+  Response: list recovery_logs + average score per field
+
+POST   /recovery                       [AUTH]
+  Body: { logged_at: date, sleep_hours: float, sleep_quality: int,
+          stress_level: int, doms_level: int (opsional), notes: string (opsional) }
+
+PUT    /recovery/:id                   [AUTH]
+DELETE /recovery/:id                   [AUTH]
+
+GET    /recovery/summary               [AUTH]
+  Query params: ?weeks=4
+  Response: {
+    avg_sleep_hours: float,
+    avg_sleep_quality: float,
+    avg_stress_level: float,
+    avg_doms_level: float,
+    recovery_score: float,     // composite score 0-100
+    trend: "improving"|"declining"|"stable"
+  }
+
+================================================================================
+BAGIAN 3: LOGIKA BISNIS
+================================================================================
+
+--- 3A. FORMULA WILKS SCORE ---
+
+Konstanta Pria:
+  a = -216.0475144
+  b = 16.2606339
+  c = -0.002388645
+  d = -0.00113732
+  e = 7.01863E-06
+  f = -1.291E-08
+
+Konstanta Wanita:
+  a = 594.31747775582
+  b = -27.23842536447
+  c = 0.82112226871
+  d = -0.00930733913
+  e = 4.731582E-05
+  f = -9.054E-08
+
+Formula:
+  denom = a + b*BW + c*BW^2 + d*BW^3 + e*BW^4 + f*BW^5
+  Wilks = Total * (500 / denom)
+
+  BW = body_weight_kg, Total = squat + bench + deadlift (kg)
+  Round ke 2 desimal.
+
+--- 3B. FORMULA IPF GL SCORE ---
+
+Konstanta Pria   (equipped): [1199.72839, 1025.18162, 0.009210]
+Konstanta Pria   (raw):      [1236.25115, 1449.21864, 0.01644]
+Konstanta Wanita (raw):      [758.63878,  949.31382,  0.02435]
+
+Formula:
+  GL = Total * 100 / (A - B * e^(-C * BW))
+  Gunakan konstanta raw sebagai default.
+  Round ke 2 desimal.
+
+--- 3C. LOGIKA WEIGHT CLASS ---
+
+IPF Weight Classes (Raw):
+  Pria   : 59, 66, 74, 83, 93, 105, 120, 120+
+  Wanita : 47, 52, 57, 63, 69, 76, 84, 84+
+
+Logika recommended_class:
+  - Cari kelas terkecil yang >= body_weight_kg
+  - next_class_up: kelas di atas recommended
+  - next_class_down: kelas di bawah recommended
+
+--- 3D. LOGIKA RASIO ANTAR LIFT ---
+
+Benchmark rasio ideal (raw powerlifting):
+  Bench / Squat target  : 67-75%
+  Deadlift / Squat target: 115-125%
+
+Logika weakness detection:
+  Jika bench_to_squat_pct < 65%  → weakness = "bench"
+  Jika deadlift_to_squat_pct < 110% → weakness = "deadlift"
+  Jika bench_to_squat_pct > 85%  → weakness = "squat" (bench terlalu dominan)
+  Jika semua dalam range         → weakness = "balanced"
+
+weakness_note: berikan penjelasan 1 kalimat dalam Bahasa Indonesia.
+
+--- 3E. LOGIKA RECOVERY SCORE ---
+
+recovery_score (0-100):
+  = (sleep_hours/9 * 30)          // max kontribusi 30 poin
+  + (sleep_quality/10 * 30)       // max 30 poin
+  + ((10 - stress_level)/10 * 25) // max 25 poin (stres rendah = lebih baik)
+  + ((5 - doms_level)/4 * 15)     // max 15 poin (jika doms_level null, skip)
+
+Cap di 100. Round ke 1 desimal.
+
+trend (bandingkan rata-rata 7 hari terakhir vs 7 hari sebelumnya):
+  improving : score naik > 5 poin
+  declining : score turun > 5 poin
+  stable    : selisih <= 5 poin
+
+--- 3F. LOGIKA VOLUME & INTENSITAS ---
+
+Volume per lift per minggu:
+  volume_kg = SUM(weight_kg * reps) untuk semua set dalam minggu itu
+
+avg_intensity_pct:
+  Butuh estimated 1RM terbaru per lift (ambil dari lift_records terbaru)
+  intensity per sesi = weight_kg / estimated_1rm * 100
+  avg_intensity_pct = rata-rata semua sesi dalam minggu
+
+Estimated 1RM: gunakan formula Epley dari utils/calculator.go yang sudah ada.
+
+================================================================================
+BAGIAN 4: STRUKTUR FILE BARU
+================================================================================
+
+--- BACKEND (tambahan) ---
+
+models/
+  body_weight_log.go
+  recovery_log.go
+
+handlers/
+  body_weight_handler.go
+  recovery_handler.go
+  analytics_handler.go      // volume, intensitas, rasio lift
+
+utils/
+  wilks.go                  // Wilks + IPF GL formula
+  weight_class.go           // IPF weight class logic
+  recovery_score.go         // composite recovery score
+
+routes/routes.go            // TAMBAHKAN route baru, jangan hapus yang lama
+
+--- FRONTEND (tambahan) ---
+
+src/pages/
+  BodyWeight.tsx            // form input + chart berat badan
+  Recovery.tsx              // form input recovery harian
+  Analytics.tsx             // dashboard analytics (volume, intensitas, rasio)
+
+src/components/
+  WeeklyVolumeChart.tsx     // bar chart volume per minggu per lift
+  IntensityZoneChart.tsx    // pie/donut chart distribusi zona intensitas
+  LiftRatioCard.tsx         // card rasio + weakness indicator
+  RecoverySummaryCard.tsx   // card summary recovery score + trend
+  BodyWeightChart.tsx       // line chart berat badan + weight class indicator
+
+src/api/
+  analyticsApi.ts           // axios calls ke /analytics/*
+  bodyWeightApi.ts
+  recoveryApi.ts
+
+================================================================================
+BAGIAN 5: DETAIL HALAMAN FRONTEND
+================================================================================
+
+--- BodyWeight.tsx ---
+- Form input: berat (kg), tanggal, catatan
+- Line chart riwayat berat badan (gunakan recharts atau chart.js)
+- Tampilkan recommended IPF weight class berdasarkan berat terakhir
+- Indikator: berapa kg lagi ke kelas di atas / di bawah
+- Tabel riwayat 12 entri terakhir dengan tombol edit & hapus
+
+--- Recovery.tsx ---
+- Form input harian:
+    * Jam tidur (slider 4–10 jam, step 0.5)
+    * Kualitas tidur (slider 1–10)
+    * Level stres (slider 1–10)
+    * DOMS (slider 1–5, opsional)
+    * Catatan (textarea)
+- Recovery score hari ini ditampilkan langsung setelah submit (hitung di FE juga)
+- Chart 7 hari terakhir: line chart recovery score + bar sleep hours
+- Summary card: rata-rata 7 hari + trend badge (improving/stable/declining)
+
+--- Analytics.tsx ---
+Terdiri dari beberapa section/tab:
+
+  TAB 1 — Volume Mingguan:
+    - Grouped bar chart: squat/bench/deadlift volume per minggu
+    - Filter: 4 minggu / 8 minggu / 12 minggu
+    - Tabel ringkasan di bawah chart
+
+  TAB 2 — Intensitas:
+    - Donut chart distribusi zona intensitas
+    - Filter per lift dan periode
+    - Keterangan zona: Z1 Recovery, Z2 Hypertrophy, Z3 Strength, Z4 Peaking
+
+  TAB 3 — Rasio Lift:
+    - Card per lift: 1RM estimasi terbaru
+    - Gauge/progress bar: bench/squat ratio vs target range
+    - Gauge/progress bar: deadlift/squat ratio vs target range
+    - Weakness badge: warna merah jika di luar range, hijau jika balanced
+    - Ratio vs body weight (strength standard: beginner/intermediate/advanced)
+
+  TAB 4 — Wilks & IPF GL:
+    - Form input: berat badan, total (atau ambil otomatis dari lift_records)
+    - Pilihan sex: Male / Female
+    - Hasil: Wilks Score + IPF GL Score dalam card besar
+    - Tabel perbandingan level berdasarkan Wilks:
+        < 300  : Beginner
+        300-400: Intermediate
+        400-500: Advanced
+        > 500  : Elite
+
+================================================================================
+BAGIAN 6: CONSTRAINT & CATATAN TEKNIS
+================================================================================
+
+1. Semua endpoint baru tetap menggunakan middleware JWT yang sudah ada
+2. Gunakan format response yang sama: { success, message, data }
+3. Untuk /analytics/volume-weekly, query harus efisien — gunakan GROUP BY
+   YEARWEEK(lifted_at) di MariaDB, bukan loop di Go
+4. Estimated 1RM untuk intensitas: ambil lift_records dengan reps paling
+   rendah (1-3) dalam 30 hari terakhir per jenis lift sebagai acuan 1RM
+5. Wilks dan IPF GL: hitung keduanya sekaligus dalam satu handler
+6. FE: semua chart menggunakan recharts (sudah ada di stack awal)
+7. FE: loading skeleton wajib di semua chart/card analytics
+8. Recovery score boleh dihitung di FE juga untuk preview real-time
+   sebelum submit (tidak perlu tunggu response BE)
+9. UNIQUE KEY di body_weight_logs dan recovery_logs: handle konflik dengan
+   upsert (INSERT ... ON DUPLICATE KEY UPDATE) bukan error
+10. Semua slider di FE gunakan komponen yang sudah ada (shadcn/ui Slider)
+    atau buat custom range input dengan styling Tailwind
+11. Weight class logic: jika user belum pernah input berat badan,
+    endpoint /body-weight/latest return 404 dengan pesan yang informatif
+
+================================================================================
+BAGIAN 7: URUTAN PROMPT UNTUK MODEL
+================================================================================
+
+PROMPT 1:
+"Baca planning addons ini. Jalankan ALTER TABLE untuk menambah kolom rpe
+di lift_records (jika belum ada), lalu buat dua tabel baru: body_weight_logs
+dan recovery_logs sesuai skema di Bagian 1. Sertakan migration SQL-nya."
+
+PROMPT 2:
+"Buat models/body_weight_log.go dan models/recovery_log.go menggunakan
+GORM sesuai skema tabel di Bagian 1. Ikuti konvensi model yang sudah ada."
+
+PROMPT 3:
+"Buat utils/wilks.go dengan implementasi Wilks Score dan IPF GL Score
+sesuai formula dan konstanta di Bagian 3A dan 3B. Sertakan unit test."
+
+PROMPT 4:
+"Buat utils/weight_class.go dengan logika IPF weight class sesuai Bagian 3C.
+Buat utils/recovery_score.go dengan logika composite score sesuai Bagian 3E."
+
+PROMPT 5:
+"Buat handlers/body_weight_handler.go dengan semua endpoint /body-weight
+sesuai Bagian 2. Gunakan upsert (ON DUPLICATE KEY UPDATE) untuk POST."
+
+PROMPT 6:
+"Buat handlers/recovery_handler.go dengan semua endpoint /recovery
+sesuai Bagian 2. Implementasikan logika trend di endpoint /recovery/summary."
+
+PROMPT 7:
+"Buat handlers/analytics_handler.go dengan endpoint:
+- GET /analytics/volume-weekly (gunakan GROUP BY YEARWEEK di query)
+- GET /analytics/intensity-distribution
+- GET /analytics/lift-ratio (gunakan logika di Bagian 3D)
+- POST /calculator/wilks
+Sesuai Bagian 2 dan Bagian 3."
+
+PROMPT 8:
+"Update routes/routes.go: tambahkan semua route baru dari Bagian 2.
+Jangan ubah atau hapus route yang sudah ada."
+
+PROMPT 9:
+"Buat src/api/bodyWeightApi.ts, src/api/recoveryApi.ts, dan
+src/api/analyticsApi.ts menggunakan axiosInstance yang sudah ada."
+
+PROMPT 10:
+"Buat halaman src/pages/BodyWeight.tsx sesuai spesifikasi di Bagian 5.
+Gunakan recharts untuk line chart."
+
+PROMPT 11:
+"Buat halaman src/pages/Recovery.tsx sesuai spesifikasi di Bagian 5.
+Implementasikan preview recovery score real-time di FE sebelum submit."
+
+PROMPT 12:
+"Buat komponen src/components/WeeklyVolumeChart.tsx,
+IntensityZoneChart.tsx, LiftRatioCard.tsx, RecoverySummaryCard.tsx,
+dan BodyWeightChart.tsx sesuai Bagian 4."
+
+PROMPT 13:
+"Buat halaman src/pages/Analytics.tsx dengan 4 tab sesuai Bagian 5.
+Gunakan komponen chart yang sudah dibuat di Prompt 12."
+
+PROMPT 14:
+"Update src/pages/Dashboard.tsx yang sudah ada: tambahkan section baru
+berupa RecoverySummaryCard (recovery 7 hari terakhir) dan LiftRatioCard
+di bawah konten yang sudah ada. Jangan ubah konten dashboard yang lama."
+
+================================================================================
+END OF DOCUMENT — POWERLIFTING SAAS ADDONS
+================================================================================

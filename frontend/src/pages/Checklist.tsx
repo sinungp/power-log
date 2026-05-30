@@ -42,9 +42,9 @@ export default function ChecklistPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
-          <h1 className="text-2xl font-light text-champagne">Checklist</h1>
+          <h1 className="text-xl sm:text-2xl font-light text-champagne">Checklist</h1>
           <p className="text-muted">{doneCount}/{checklists.length} completed today</p>
         </div>
         <div className="flex gap-2">

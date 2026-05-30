@@ -44,4 +44,29 @@ func Setup(app *fiber.App) {
 	// OAuth routes (outside /api/v1, web redirect flow)
 	app.Get("/oauth/:provider/login", handlers.OAuthLogin)
 	app.Get("/oauth/:provider/callback", handlers.OAuthCallback)
+
+	// Body weight (protected)
+	bw := api.Group("/body-weight", middleware.Protected())
+	bw.Get("/", handlers.GetBodyWeights)
+	bw.Post("/", handlers.CreateBodyWeight)
+	bw.Get("/latest", handlers.GetLatestBodyWeight)
+	bw.Put("/:id", handlers.UpdateBodyWeight)
+	bw.Delete("/:id", handlers.DeleteBodyWeight)
+
+	// Recovery logs (protected)
+	rec := api.Group("/recovery", middleware.Protected())
+	rec.Get("/", handlers.GetRecoveryLogs)
+	rec.Post("/", handlers.CreateRecoveryLog)
+	rec.Get("/summary", handlers.GetRecoverySummary)
+	rec.Put("/:id", handlers.UpdateRecoveryLog)
+	rec.Delete("/:id", handlers.DeleteRecoveryLog)
+
+	// Analytics (protected)
+	analytics := api.Group("/analytics", middleware.Protected())
+	analytics.Get("/volume-weekly", handlers.GetVolumeWeekly)
+	analytics.Get("/intensity-distribution", handlers.GetIntensityDistribution)
+	analytics.Get("/lift-ratio", handlers.GetLiftRatio)
+
+	// Wilks calculator (public)
+	api.Post("/calculator/wilks", handlers.CalculateWilksScore)
 }

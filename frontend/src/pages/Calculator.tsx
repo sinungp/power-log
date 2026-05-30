@@ -33,12 +33,12 @@ export default function Calculator() {
   return (
     <div className="max-w-2xl mx-auto space-y-8">
       <div>
-        <h1 className="text-2xl font-light text-champagne">1RM Calculator</h1>
-        <p className="text-muted">Calculate your one-rep max using multiple formulas</p>
+        <h1 className="text-xl sm:text-2xl font-light text-champagne">1RM Calculator</h1>
+        <p className="text-muted text-sm sm:text-base">Calculate your one-rep max using multiple formulas</p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-raised p-6 border border-hairline space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="bg-raised p-4 sm:p-6 border border-hairline space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-champagne mb-1">Weight (kg)</label>
             <input
@@ -71,23 +71,23 @@ export default function Calculator() {
       </form>
 
       {result && (
-        <div className="bg-raised p-6 border border-hairline">
+        <div className="bg-raised p-4 sm:p-6 border border-hairline">
           <h2 className="font-semibold text-champagne mb-4">Results</h2>
           {result.warning && (
             <div className="bg-danger/10 text-danger p-3 text-sm mb-4">{result.warning}</div>
           )}
           <div className="grid gap-3">
             <div className="flex justify-between items-center p-3 bg-lacquer border border-hairline">
-              <span className="font-medium text-champagne">Epley</span>
-              <span className="text-xl font-bold text-gold">{result.epley} kg</span>
+              <span className="font-medium text-champagne text-sm sm:text-base">Epley</span>
+              <span className="text-lg sm:text-xl font-bold text-gold">{result.epley} kg</span>
             </div>
             <div className="flex justify-between items-center p-3 bg-lacquer border border-hairline">
-              <span className="font-medium text-champagne">Brzycki</span>
-              <span className="text-xl font-bold text-gold">{result.brzycki} kg</span>
+              <span className="font-medium text-champagne text-sm sm:text-base">Brzycki</span>
+              <span className="text-lg sm:text-xl font-bold text-gold">{result.brzycki} kg</span>
             </div>
             <div className="flex justify-between items-center p-3 bg-lacquer border border-hairline">
-              <span className="font-medium text-champagne">Lombardi</span>
-              <span className="text-xl font-bold text-gold">{result.lombardi} kg</span>
+              <span className="font-medium text-champagne text-sm sm:text-base">Lombardi</span>
+              <span className="text-lg sm:text-xl font-bold text-gold">{result.lombardi} kg</span>
             </div>
           </div>
         </div>
